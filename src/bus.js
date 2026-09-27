@@ -1,6 +1,7 @@
 // The bus: the "Mars-sightseeing-bus R-10" model made with Claude Design
 // (src/marsBus.js), plus what the app adds to it: live screens, stands for
 // the personal screens in the front row, fast materials and instanced wheels.
+// The live map sits low on the dashboard face, so the windshield stays clear.
 //
 // Bus-local coordinates: origin on the ground under the cabin, x = right,
 // y = up, -z = forward. The model's cabin floor sits at y = BUS floor height.
@@ -55,10 +56,10 @@ export function seatPanelMatrix(seat) {
 export function screenPlacements() {
   const m = getModel();
   const lift = new THREE.Matrix4().makeTranslation(0, floorY(), 0);
-  const dash = lift.clone().multiply(m.dashPod).multiply(new THREE.Matrix4().makeTranslation(0, 0.01, 0.027));
+  const dash = lift.clone().multiply(m.dashFace);
   return {
     info: { matrix: compose(0, floorY() + INFO.y, INFO.z), width: INFO.w, height: INFO.h },
-    dash: { matrix: dash, width: 0.72, height: 0.36 },
+    dash: { matrix: dash, width: 0.6, height: 0.3 },
     badges: [], // the model has its own mission badges
   };
 }
