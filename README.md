@@ -52,7 +52,7 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 
 - `src/config.js`: alle grænser samlet ét sted:
   - komfort: fart, acceleration, drejehastighed, tonetider
-  - sæder: rækkeafstand, sædehøjde, øjenhøjde, hjelmfarver
+  - sæder: øjenhøjde, hjelmfarver og hvor lave ryglænene er
   - tider for velkomst, nedtælling og stop
   - landskab, dis og lys
 - `src/route.js`: ruten (lige stykker og sving) og stoppene med navne og tekster.
@@ -67,7 +67,8 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `src/route.js` | vejen og fartplanen |
 | `src/timeline.js` | tidslinjen: position, tekster og lyde ud fra tiden `t` |
 | `src/clock.js` | urkilden (lokalt ur nu, fælles ur i trin 2) |
-| `src/bus.js` | kabine, sæder, instrumentbræt og hjul |
+| `src/marsBus.js` | busmodellen "R-10", lavet med Claude Design (sæder, vinduer, instrumentbræt, hjul) |
+| `src/bus.js` | sætter modellen ind i turen: sædepladser, levende kort, infoskærm og hjul |
 | `src/terrain.js`, `src/landmarks.js` | Mars-landskab, vej, sten, himmel og landemærker |
 | `src/passengers.js` | tegner passagerer (hjelm og handsker) ud fra data |
 | `src/simulated.js` | simulerede passagerer |
@@ -78,5 +79,7 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `src/network.js` | tom indtil trin 2 |
 
 ## Teknik
+
+Sædernes placering (0,9 m mellem rækkerne) ligger fast i busmodellen.
 
 Statisk website uden byggetrin. three.js r186 ligger i `vendor/three/` (MIT-licens), så siden ikke afhænger af et CDN. Alt 3D er bygget i kode, og lyset er bagt ind i farverne. Siden bruger ingen skygger og kun få tegneopgaver. Hostes på GitHub Pages fra `main`.
