@@ -62,20 +62,23 @@ export function computeLayout(path) {
   ];
   const mesa = buttes[0];
   const lander = { ...at('landing', -4, -24) };
+  // The rover Curiosity, parked for good in front of the Murray Buttes.
+  const rover = { ...at('cliff', 2, 12.5) };
   // Base origin 28.9 m ahead of the stop: the bus front then sits 15 m from the door.
   const base = { ...at('base', 28.9, 0) };
   // A big hazy mountain on the horizon, north-west of the route.
   const mountain = { x: center.x - 900, z: center.z - 1250, radius: 520, height: 330 };
 
-  return { stop, center, halfX, halfZ, crater, dunes, mesa, buttes, lander, base, mountain };
+  return { stop, center, halfX, halfZ, crater, dunes, mesa, buttes, lander, rover, base, mountain };
 }
 
 // Natural terrain height (before the road is graded in).
 export function makeNaturalHeight(layout) {
   const seed = WORLD.seed;
-  const { center, crater, dunes, lander, base, mountain, buttes } = layout;
+  const { center, crater, dunes, lander, rover, base, mountain, buttes } = layout;
   const flats = [
     { x: lander.x, z: lander.z, r0: 18, r1: 45 },
+    { x: rover.x, z: rover.z, r0: 5, r1: 12 },
     { x: base.x, z: base.z, r0: 72, r1: 115 },
     ...buttes.map((b) => ({ x: b.x, z: b.z, r0: b.radius * 1.6, r1: b.radius * 2.8 })),
   ];
@@ -505,6 +508,7 @@ function buildRocks(terrain) {
     if (terrain.distanceToRoad(x, z) < 6.5 + r) return true;
     if (Math.hypot(x - L.base.x, z - L.base.z) < 85) return true;
     if (Math.hypot(x - L.lander.x, z - L.lander.z) < 16) return true;
+    if (Math.hypot(x - L.rover.x, z - L.rover.z) < 5 + r) return true;
     for (const b of L.buttes) if (Math.hypot(x - b.x, z - b.z) < b.radius * 1.9) return true;
     const dd = Math.hypot(x - L.dunes.x, z - L.dunes.z) / L.dunes.radius;
     if (dd < 0.8 && rng() < 0.85) return true;

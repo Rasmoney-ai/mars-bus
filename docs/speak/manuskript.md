@@ -15,16 +15,16 @@ Speaket starter lidt efter hvert afsnits begyndelse: 1,5 sekund efter bussen kø
 | Nr. | Fil | Afsnit | Starter | Plads til | Ca. ord |
 |---|---|---|---|---|---|
 | 1 | `01-velkomst.mp3` | Velkomst ved landingsmodulet | 0:01 | 13 sek. | 25 |
-| 2 | `02-mod-klippetaarnene.mp3` | Kørsel mod Klippetårnene | 0:21 | 69 sek. | 110-130 |
-| 3 | `03-klippetaarnene.mp3` | Stop: Klippetårnene | 1:32 | 22 sek. | 40 |
-| 4 | `04-mod-krateret.mp3` | Kørsel mod Krateret | 1:56 | 67 sek. | 110-130 |
-| 5 | `05-krateret.mp3` | Stop: Krateret | 3:06 | 22 sek. | 40 |
-| 6 | `06-mod-sandklitterne.mp3` | Kørsel mod Sandklitterne | 3:30 | 70 sek. | 110-130 |
-| 7 | `07-sandklitterne.mp3` | Stop: Sandklitterne | 4:43 | 22 sek. | 40 |
-| 8 | `08-mod-basen.mp3` | Kørsel mod Marsbasen | 5:07 | 77 sek. | 120-140 |
-| 9 | `09-marsbasen.mp3` | Ankomst til Marsbasen | 6:26 | 22 sek. | 40 |
+| 2 | `02-mod-murray-buttes.mp3` | Kørsel mod Murray Buttes | 0:21 | 69 sek. | 110-130 |
+| 3 | `03-murray-buttes.mp3` | Stop: Murray Buttes og Curiosity | 1:32 | 27 sek. | 50 |
+| 4 | `04-mod-krateret.mp3` | Kørsel mod Krateret | 2:01 | 67 sek. | 110-130 |
+| 5 | `05-krateret.mp3` | Stop: Krateret | 3:11 | 22 sek. | 40 |
+| 6 | `06-mod-sandklitterne.mp3` | Kørsel mod Sandklitterne | 3:35 | 70 sek. | 110-130 |
+| 7 | `07-sandklitterne.mp3` | Stop: Sandklitterne | 4:48 | 22 sek. | 40 |
+| 8 | `08-mod-basen.mp3` | Kørsel mod Marsbasen | 5:12 | 77 sek. | 120-140 |
+| 9 | `09-marsbasen.mp3` | Ankomst til Marsbasen | 6:31 | 22 sek. | 40 |
 
-Hele turen varer ca. 6 min. 49 sek.
+Hele turen varer ca. 6 min. 54 sek.
 
 Teksterne herunder er **udkast**. Ret dem frit, de er kun et bud på noget, der passer til tiderne.
 
@@ -37,9 +37,9 @@ Teksterne herunder er **udkast**. Ret dem frit, de er kun et bud på noget, der 
 
 > Velkommen til Mars, og velkommen ombord på bussen R-10. Jeg er jeres guide på turen ud til Marsbasen. Sid godt, og kig ud ad vinduerne. Vi kører om lidt.
 
-## 2. Kørsel mod Klippetårnene
+## 2. Kørsel mod Murray Buttes
 
-- **Fil:** `02-mod-klippetaarnene.mp3`, ca. 69 sekunder
+- **Fil:** `02-mod-murray-buttes.mp3`, ca. 69 sekunder
 - **Eleverne ser:** Bussen kører væk fra landingsmodulet ad en jævn vej med et blødt sving til højre og så til venstre. Rødbrunt, stenet landskab, butterscotch-farvet himmel og støvdis. De høje lagdelte klipper kommer til syne forude.
 
 > Bag os står landingsmodulet, der har fløjet jer ned fra rumskibet. Nu kører bussen helt af sig selv. Den finder selv vejen ud til basen, og den kører roligt, så I kan nå at kigge.
@@ -52,12 +52,12 @@ Teksterne herunder er **udkast**. Ret dem frit, de er kun et bud på noget, der 
 >
 > Forude kan I se nogle høje klipper. Dem holder vi ved om lidt.
 
-## 3. Stop: Klippetårnene
+## 3. Stop: Murray Buttes og Curiosity
 
-- **Fil:** `03-klippetaarnene.mp3`, ca. 22 sekunder
-- **Eleverne ser:** Bussen holder stille. Til **venstre** står de høje lagdelte klipper (bygget over Murray Buttes, som roveren Curiosity har fotograferet). Skærmen viser: "Se de lagdelte klipper til venstre".
+- **Fil:** `03-murray-buttes.mp3`, ca. 27 sekunder
+- **Eleverne ser:** Bussen holder stille. Til **venstre** står de høje lagdelte klippetårne Murray Buttes. Foran dem, ca. 12 meter fra bussen, holder roveren Curiosity, støvet efter mange år på Mars. Skærmen viser: "Curiosity og klippetårnene til venstre".
 
-> Se til venstre. De høje klipper kaldes Klippetårnene. Kan I se striberne? Hver stribe er et lag sand og mudder. Lagene blev lagt oven på hinanden for milliarder af år siden, dengang her måske var en sø. Klipperne er Mars' historiebog.
+> Se til venstre. De høje klipper hedder Murray Buttes. Kan I se striberne? Hvert lag er sand og mudder fra en sø for milliarder af år siden. Foran klipperne holder roveren Curiosity. Den kørte forbi her i år totusind og seksten og tog billeder af klipperne. I dag er den et minde om de første rejser til Mars.
 
 ## 4. Kørsel mod Krateret
 

@@ -19,7 +19,7 @@ Den lille skærm foran din plads har knapperne **Pause / Fortsæt**, **Forfra / 
 - trykke på aftrækkeren med en controller,
 - eller røre skærmen med en finger.
 
-Turen varer ca. 6¾ minut, med tre stop på 25 sekunder og ankomst til basen. En guide fortæller undervejs (speak), når lydfilerne ligger i `audio/speak/`. Se manuskriptet i `docs/speak/manuskript.md`.
+Turen varer ca. 7 minutter, med tre stop (Murray Buttes med roveren Curiosity, et krater og sandklitter) og ankomst til basen. En guide fortæller undervejs (speak), når lydfilerne ligger i `audio/speak/`. Se manuskriptet i `docs/speak/manuskript.md`.
 
 ## På en almindelig computer
 
@@ -73,6 +73,7 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `src/terrain.js`, `src/landmarks.js` | Mars-landskab, vej, sten, himmel og landemærker |
 | `src/lander.js` | landingsmodulet LM-03, lavet med Claude Design |
 | `src/marsBase.js` | Marsbasen, lavet med Claude Design |
+| `src/curiosity.js` | roveren Curiosity, lavet med Claude Design |
 | `src/suitGear.js` | hjelm og handsker, lavet med Claude Design |
 | `src/suit.js` | gør hjelm og handsker lette nok til brillen |
 | `src/passengers.js` | tegner passagerer (hjelm og handsker) ud fra data |
