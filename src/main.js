@@ -16,6 +16,7 @@ import { UserHands } from './hands.js';
 import { LocalClock } from './clock.js';
 import { Sound } from './audio.js';
 import { Narration } from './narration.js';
+import { RoverMotion } from './rover.js';
 import { CabinScreens } from './ui/screens.js';
 import { SeatPanel, PanelInteraction } from './ui/panel.js';
 import { DomUI } from './ui/dom.js';
@@ -90,6 +91,7 @@ const simulation = new PassengerSimulation(timeline, world.layout);
 const hands = new UserHands(renderer, rig);
 const clock = new LocalClock(timeline.duration);
 const sound = new Sound();
+const rover = new RoverMotion(world.rover, world.layout.rover, timeline.stops.find((st) => st.id === 'cliff').arrival, world.terrain);
 const narration = new Narration(timeline, sound);
 narration.setEnabled(settings.speak);
 narration.load();
@@ -282,6 +284,7 @@ function frame() {
   // this frame's bus pose before the hands and buttons are checked.
   bus.group.updateMatrixWorld(true);
   world.update(view.pose);
+  rover.update(t);
 
   const status = timeline.status(t, settings.comfort, view.pose);
   screens.update(status, view, clock.playing, now);

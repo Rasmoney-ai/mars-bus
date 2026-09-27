@@ -74,6 +74,7 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `src/lander.js` | landingsmodulet LM-03, lavet med Claude Design |
 | `src/marsBase.js` | Marsbasen, lavet med Claude Design |
 | `src/curiosity.js` | roveren Curiosity, lavet med Claude Design |
+| `src/rover.js` | Curiosity kører mellem sten ved Murray Buttes |
 | `src/suitGear.js` | hjelm og handsker, lavet med Claude Design |
 | `src/suit.js` | gør hjelm og handsker lette nok til brillen |
 | `src/passengers.js` | tegner passagerer (hjelm og handsker) ud fra data |

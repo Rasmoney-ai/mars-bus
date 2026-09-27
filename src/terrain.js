@@ -7,6 +7,7 @@ import { WORLD } from './config.js';
 import { fbm, valueNoise, mulberry32, hash2, smoothstep, lerp } from './util/noise.js';
 import { MeshBuilder, makeLight, shadeFactor, bakedMaterial } from './util/mesh.js';
 import { buildLandmarks } from './landmarks.js';
+import { roverRocks, siteToWorld } from './rover.js';
 
 const DEG = Math.PI / 180;
 
@@ -62,8 +63,11 @@ export function computeLayout(path) {
   ];
   const mesa = buttes[0];
   const lander = { ...at('landing', -4, -24) };
-  // The rover Curiosity, parked for good in front of the Murray Buttes.
+  // The rover Curiosity at work in front of the Murray Buttes (see rover.js),
+  // facing a little past the bus so it is seen at an angle.
   const rover = { ...at('cliff', 2, 12.5) };
+  rover.yaw = Math.atan2(stop.cliff.x - rover.x, stop.cliff.z - rover.z) + 0.6;
+  rover.rocks = roverRocks().map((r) => siteToWorld(rover, r.x, r.z));
   // Base origin 28.9 m ahead of the stop: the bus front then sits 15 m from the door.
   const base = { ...at('base', 28.9, 0) };
   // A big hazy mountain on the horizon, north-west of the route.
@@ -78,7 +82,7 @@ export function makeNaturalHeight(layout) {
   const { center, crater, dunes, lander, rover, base, mountain, buttes } = layout;
   const flats = [
     { x: lander.x, z: lander.z, r0: 18, r1: 45 },
-    { x: rover.x, z: rover.z, r0: 5, r1: 12 },
+    { x: rover.x, z: rover.z, r0: 6, r1: 13 },
     { x: base.x, z: base.z, r0: 72, r1: 115 },
     ...buttes.map((b) => ({ x: b.x, z: b.z, r0: b.radius * 1.6, r1: b.radius * 2.8 })),
   ];
@@ -508,7 +512,7 @@ function buildRocks(terrain) {
     if (terrain.distanceToRoad(x, z) < 6.5 + r) return true;
     if (Math.hypot(x - L.base.x, z - L.base.z) < 85) return true;
     if (Math.hypot(x - L.lander.x, z - L.lander.z) < 16) return true;
-    if (Math.hypot(x - L.rover.x, z - L.rover.z) < 5 + r) return true;
+    if (Math.hypot(x - L.rover.x, z - L.rover.z) < 6 + r) return true;
     for (const b of L.buttes) if (Math.hypot(x - b.x, z - b.z) < b.radius * 1.9) return true;
     const dd = Math.hypot(x - L.dunes.x, z - L.dunes.z) / L.dunes.radius;
     if (dd < 0.8 && rng() < 0.85) return true;
@@ -563,6 +567,13 @@ function buildRocks(terrain) {
     const d = L.crater.radius * (rng() < 0.6 ? 0.95 + rng() * 0.3 : rng() * 0.7);
     place(L.crater.x + Math.cos(a) * d, L.crater.z + Math.sin(a) * d, 0.2 + Math.pow(rng(), 2) * 1.6);
   }
+
+  // The rocks Curiosity drives up to and studies.
+  L.rover.rocks.forEach((r, i) => {
+    const size = 0.5 + 0.1 * i;
+    m.compose(pv.set(r.x, terrain.heightAt(r.x, r.z) - size * 0.25, r.z), q.setFromEuler(e.set(0.2, 1.3 * i + 0.4, 0.1)), sv.set(size * 1.2, size * 0.75, size));
+    builder.geometry(protos[3 + i], m, col.copy(COLORS.rockA).lerp(COLORS.rockB, 0.3 + 0.4 * i));
+  });
 
   const mesh = new THREE.Mesh(builder.build(), bakedMaterial());
   mesh.matrixAutoUpdate = false;
@@ -641,6 +652,7 @@ export function createWorld(path) {
     fog,
     background,
     layout: terrain.layout,
+    rover: group.getObjectByName('Curiosity_MSL'),
     // Keep the sky centred on the bus (it never rotates).
     update(pose) {
       sky.position.set(pose.x, 0, pose.z);

@@ -147,13 +147,11 @@ function buildLanderGroup(terrain) {
   return group;
 }
 
-// The rover Curiosity (made with Claude Design), parked at the Murray Buttes
-// with its mast and arm turned a little past the bus, so it is seen at an angle.
+// The rover Curiosity (made with Claude Design) at the Murray Buttes. It is
+// moved by rover.js; the light is baked for the site heading.
 function buildRoverGroup(terrain) {
-  const L = terrain.layout;
-  const p = L.rover, bus = L.stop.cliff;
-  const yaw = Math.atan2(bus.x - p.x, bus.z - p.z) + 0.6;
-  const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+  const p = terrain.layout.rover;
+  const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), p.yaw);
   const sunDir = sunDirection().applyQuaternion(q.clone().invert());
   let r = 0, g = 0, b = 0;
   const c = new THREE.Color();
