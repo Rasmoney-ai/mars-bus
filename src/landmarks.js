@@ -13,42 +13,54 @@ import { buildMarsBase } from './marsBase.js';
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // A butte like the Murray Buttes in Gale crater (Curiosity drove between
-// them): a dark, hard caprock that overhangs a little, steep cliffs of thin
-// pale layers, and a wide apron of scree around the foot. Irregular outline
-// with gullies, so no two buttes look alike.
+// them): a broad cone of scree reaching about two thirds up, with thin rock
+// ledges sticking out of it, and a narrower, jagged, stepped crag of layered
+// rock on top. Greyish tan-brown; the dark comes from shadows under the
+// ledges (baked from the face direction). Flat slabs lie on the slopes.
 const BUTTE_PROFILE = [
   // [radius factor, height factor, part]
-  [2.05, 0, 'talus'], [1.72, 0.09, 'talus'], [1.45, 0.2, 'talus'], [1.24, 0.31, 'talus'],
-  [1.12, 0.37, 'cliff'], [1.07, 0.52, 'cliff'], [1.03, 0.66, 'cliff'], [1.0, 0.8, 'cliff'],
-  [1.09, 0.83, 'cap'], [1.09, 0.94, 'cap'], [1.01, 1.0, 'cap'],
+  [2.3, 0, 'talus'], [2.02, 0.08, 'talus'], [1.74, 0.17, 'talus'], [1.5, 0.26, 'talus'],
+  [1.56, 0.275, 'ledge'], [1.43, 0.3, 'talus'], [1.22, 0.38, 'talus'],
+  [1.27, 0.395, 'ledge'], [1.14, 0.42, 'talus'], [0.96, 0.5, 'talus'], [0.8, 0.58, 'talus'],
+  [0.76, 0.62, 'crag'], [0.8, 0.7, 'crag'], [0.68, 0.715, 'ledge'], [0.66, 0.8, 'crag'],
+  [0.68, 0.855, 'crag'], [0.55, 0.87, 'ledge'], [0.52, 0.95, 'crag'], [0.44, 1.0, 'ledge'],
 ];
 const BUTTE_COLORS = {
-  talusA: new THREE.Color('#8a4b2f'), talusB: new THREE.Color('#a8663f'),
-  layerA: new THREE.Color('#b87c56'), layerB: new THREE.Color('#d2a178'), layerDark: new THREE.Color('#99593a'),
-  cap: new THREE.Color('#5c3c2e'), capTop: new THREE.Color('#6d4a38'),
+  talusA: new THREE.Color('#96603f'), talusB: new THREE.Color('#a8704c'),
+  ledge: new THREE.Color('#c08966'), crag: new THREE.Color('#aa7452'), cragBand: new THREE.Color('#c5916b'),
+  slab: new THREE.Color('#b8825f'), top: new THREE.Color('#b07b58'),
 };
 
 function addButte(b, terrain, m, seed) {
-  const K = 44;
+  const K = 48;
   const rows = BUTTE_PROFILE.length;
+  // Outline: smooth wobble plus gullies, for the whole butte.
   const outline = [];
   for (let k = 0; k < K; k++) {
     const t = (k / K) * Math.PI * 2;
-    let r = 1 + 0.16 * valueNoise(Math.cos(t) * 1.3 + seed, Math.sin(t) * 1.3, seed) + 0.07 * valueNoise(Math.cos(t) * 4, Math.sin(t) * 4 + seed, seed + 1);
-    r -= 0.17 * Math.pow(Math.max(0, Math.cos(t * 5 + seed)), 14); // gullies
+    let r = 1 + 0.14 * valueNoise(Math.cos(t) * 1.3 + seed, Math.sin(t) * 1.3, seed) + 0.06 * valueNoise(Math.cos(t) * 4, Math.sin(t) * 4 + seed, seed + 1);
+    r -= 0.12 * Math.pow(Math.max(0, Math.cos(t * 5 + seed)), 14);
     outline.push(r * (m.stretch ? 1 + m.stretch * Math.cos(2 * (t - m.angle)) : 1));
   }
+  // The crag is blocky: its outline changes in steps of a few segments,
+  // differently for every tier, and leans a little to one side.
+  const block = (k, i) => hash2(Math.floor((k + i * 3) / 4), i, seed + 9);
+  const lean = { x: Math.cos(seed) * 0.18 * m.radius, z: Math.sin(seed) * 0.18 * m.radius };
   const base = terrain.heightAt(m.x, m.z) - 0.5;
   const grid = [];
   for (let i = 0; i < rows; i++) {
     const [rf, hf, part] = BUTTE_PROFILE[i];
+    const high = hf > 0.6;
     const ring = [];
     for (let k = 0; k < K; k++) {
       const t = (k / K) * Math.PI * 2;
-      const jit = part === 'talus' ? 0.1 : 0.03;
-      const r = m.radius * rf * outline[k] * (1 + (hash2(k, i, seed) - 0.5) * jit);
-      const x = m.x + Math.cos(t) * r, z = m.z + Math.sin(t) * r;
-      let y = base + hf * m.height + (hash2(k, i + 50, seed) - 0.5) * (part === 'talus' ? 0.8 : 0.25);
+      let f = outline[k] * (1 + (hash2(k, i, seed) - 0.5) * (part === 'talus' ? 0.08 : 0.04));
+      if (high) f *= 0.82 + 0.36 * block(k, i);
+      if (part === 'ledge' && !high) f *= 0.97 + 0.08 * hash2(Math.floor(k / 3), i, seed + 2); // broken ledges
+      const r = m.radius * rf * f;
+      const ox = high ? lean.x * (hf - 0.6) * 2.5 : 0, oz = high ? lean.z * (hf - 0.6) * 2.5 : 0;
+      const x = m.x + ox + Math.cos(t) * r, z = m.z + oz + Math.sin(t) * r;
+      let y = base + hf * m.height + (hash2(k, i + 50, seed) - 0.5) * (part === 'talus' ? 0.6 : 0.2);
       if (i === 0) y = terrain.heightAt(x, z) - 0.25;
       ring.push(V(x, y, z));
     }
@@ -63,22 +75,31 @@ function addButte(b, terrain, m, seed) {
       const p0 = grid[i][k], p1 = grid[i][k2], p2 = grid[i + 1][k2], p3 = grid[i + 1][k];
       const y = (p0.y + p2.y) / 2 - base;
       if (part === 'talus') {
-        c.copy(BUTTE_COLORS.talusA).lerp(BUTTE_COLORS.talusB, hash2(k, i, seed + 3));
-      } else if (part === 'cliff') {
-        const band = Math.sin(y * 4.1 + seed) * 0.5 + 0.5;
-        c.copy(BUTTE_COLORS.layerA).lerp(BUTTE_COLORS.layerB, band * 0.8);
-        if (Math.sin(y * 1.3 + seed * 0.7) > 0.8) c.lerp(BUTTE_COLORS.layerDark, 0.6);
-        c.multiplyScalar(0.95 + 0.1 * hash2(k, i, seed + 4));
+        c.copy(BUTTE_COLORS.talusA).lerp(BUTTE_COLORS.talusB, 0.5 * hash2(k, i, seed + 3) + 0.3 * (y / m.height));
+      } else if (part === 'ledge') {
+        c.copy(BUTTE_COLORS.ledge);
       } else {
-        c.copy(BUTTE_COLORS.cap).multiplyScalar(0.92 + 0.16 * hash2(k, i, seed + 5));
+        c.copy(BUTTE_COLORS.crag).lerp(BUTTE_COLORS.cragBand, Math.sin(y * 5.3 + seed) * 0.5 + 0.5);
       }
+      c.multiplyScalar(0.94 + 0.12 * hash2(k, i, seed + 4));
       wallQuad(b, p0, p1, p2, p3, c, center);
     }
   }
-  // Flat, slightly uneven top of the caprock.
   const top = grid[rows - 1];
-  const mid = V(m.x, base + m.height + 0.3, m.z);
-  for (let k = 0; k < K; k++) flatTri(b, top[k], top[(k + 1) % K], mid, BUTTE_COLORS.capTop);
+  const mid = V(m.x + lean.x, base + m.height + 0.2, m.z + lean.z);
+  for (let k = 0; k < K; k++) flatTri(b, top[k], top[(k + 1) % K], mid, BUTTE_COLORS.top);
+
+  // Flat slabs that have broken off and lie on the scree.
+  const slabs = Math.round(m.radius * 3);
+  for (let n = 0; n < slabs; n++) {
+    const k = Math.floor(hash2(n, 1, seed + 6) * K);
+    const i = 1 + Math.floor(hash2(n, 2, seed + 6) * 8);
+    const u = hash2(n, 3, seed + 6);
+    const p = grid[i][k].clone().lerp(grid[i + 1][k], u);
+    const size = m.radius * (0.05 + 0.1 * Math.pow(hash2(n, 4, seed + 6), 2));
+    b.box(size * 1.6, size * 0.45, size, p.x, p.y + size * 0.1, p.z, BUTTE_COLORS.slab,
+      [(hash2(n, 5, seed) - 0.5) * 0.5, hash2(n, 6, seed) * 6.28, (hash2(n, 7, seed) - 0.5) * 0.5]);
+  }
 }
 
 // A wall quad facing outwards from `center` (in the xz plane).
