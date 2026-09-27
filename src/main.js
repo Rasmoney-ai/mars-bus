@@ -15,6 +15,7 @@ import { PassengerSimulation } from './simulated.js';
 import { UserHands } from './hands.js';
 import { LocalClock } from './clock.js';
 import { Sound } from './audio.js';
+import { Narration } from './narration.js';
 import { CabinScreens } from './ui/screens.js';
 import { SeatPanel, PanelInteraction } from './ui/panel.js';
 import { DomUI } from './ui/dom.js';
@@ -22,13 +23,14 @@ import { DesktopControls } from './desktop.js';
 import { VRSession } from './xr.js';
 import { createNetwork } from './network.js';
 
-// --- Settings (start page or URL: ?seat=3&comfort=1&sim=0&debug) ------------
+// --- Settings (start page or URL: ?seat=3&comfort=1&sim=0&speak=0&debug) ----
 
 const params = new URLSearchParams(location.search);
 const settings = {
   seat: clampSeat(parseInt(params.get('seat') || '1', 10)),
   comfort: params.get('comfort') === '1',
   simulated: params.get('sim') !== '0',
+  speak: params.get('speak') !== '0',
   debug: params.has('debug'),
 };
 
@@ -88,6 +90,9 @@ const simulation = new PassengerSimulation(timeline, world.layout);
 const hands = new UserHands(renderer, rig);
 const clock = new LocalClock(timeline.duration);
 const sound = new Sound();
+const narration = new Narration(timeline, sound);
+narration.setEnabled(settings.speak);
+narration.load();
 const network = createNetwork(); // null until step 2
 
 // Fade to black (comfort mode): a small black sphere around the eyes.
@@ -305,6 +310,7 @@ function frame() {
   fade.visible = fadeLevel > 0.001;
   fade.material.opacity = fadeLevel;
   sound.setEngine(view.pose.v, clock.playing);
+  narration.update(t, clock.playing);
 
   if (!vr.active) desktop.apply();
   dom.update(t, clock.playing, status, fps, now);
@@ -344,4 +350,4 @@ vr.checkSupport().then(({ supported, message }) => dom.setVRStatus(supported, me
 document.getElementById('btn-desktop').disabled = false;
 
 // For testing in the browser console.
-window.marsbus = { clock, timeline, settings, actions, renderer, scene, network, desktop, world, panel, interaction };
+window.marsbus = { clock, timeline, settings, narration, actions, renderer, scene, network, desktop, world, panel, interaction };

@@ -16,8 +16,10 @@ const DEG = Math.PI / 180;
 // turn: angle in degrees (+ = left, - = right), radius = tightest radius.
 //       Curvature rises and falls smoothly, so the turn rate never jumps.
 // stop: a place where the bus stops. `look` says which side the view is.
+//       speak: narration file played at the stop (audio/speak/<name>.mp3),
+//       speakOnWay: narration file played on the drive to this stop.
 export const ROUTE = [
-  { stop: { id: 'landing', name: 'Landingspladsen', look: 'right' } },
+  { stop: { id: 'landing', name: 'Landingspladsen', look: 'right', speak: '01-velkomst' } },
   { straight: 30 },
   { turn: -35, radius: 40 },
   { straight: 35 },
@@ -27,6 +29,7 @@ export const ROUTE = [
     stop: {
       id: 'cliff', name: 'Klippetårnene', look: 'left',
       text: 'Se de lagdelte klipper til venstre',
+      speakOnWay: '02-mod-klippetaarnene', speak: '03-klippetaarnene',
     },
   },
   { straight: 25 },
@@ -38,6 +41,7 @@ export const ROUTE = [
     stop: {
       id: 'crater', name: 'Krateret', look: 'right',
       text: 'Kig ned i krateret til højre',
+      speakOnWay: '04-mod-krateret', speak: '05-krateret',
     },
   },
   { straight: 25 },
@@ -49,6 +53,7 @@ export const ROUTE = [
     stop: {
       id: 'dunes', name: 'Sandklitterne', look: 'left',
       text: 'Mørke sandklitter til venstre',
+      speakOnWay: '06-mod-sandklitterne', speak: '07-sandklitterne',
     },
   },
   { straight: 25 },
@@ -60,6 +65,7 @@ export const ROUTE = [
     stop: {
       id: 'base', name: 'Marsbasen', look: 'front',
       text: 'Velkommen til Marsbasen!', final: true,
+      speakOnWay: '08-mod-basen', speak: '09-marsbasen',
     },
   },
 ];

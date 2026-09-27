@@ -19,7 +19,7 @@ Den lille skærm foran din plads har knapperne **Pause / Fortsæt**, **Forfra / 
 - trykke på aftrækkeren med en controller,
 - eller røre skærmen med en finger.
 
-Turen varer ca. 6½ minut, med tre stop på 25 sekunder og ankomst til basen.
+Turen varer ca. 6¾ minut, med tre stop på 25 sekunder og ankomst til basen. En guide fortæller undervejs (speak), når lydfilerne ligger i `audio/speak/`. Se manuskriptet i `docs/speak/manuskript.md`.
 
 ## På en almindelig computer
 
@@ -44,6 +44,7 @@ Tryk **Se på skærmen**. Træk med musen for at kigge rundt.
 - `?seat=3`: vælg plads 3
 - `&comfort=1`: komforttilstand til
 - `&sim=0`: ingen simulerede passagerer
+- `&speak=0`: intet speak
 - `&debug`: viser billeder pr. sekund på skærmen foran dig
 
 Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
@@ -55,7 +56,7 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
   - sæder: øjenhøjde, farven på hjelmens halsbånd og hvor lave ryglænene er
   - tider for velkomst, nedtælling og stop
   - landskab, dis og lys
-- `src/route.js`: ruten (lige stykker og sving) og stoppene med navne og tekster.
+- `src/route.js`: ruten (lige stykker og sving) og stoppene med navne, tekster og lydfiler til speak.
 
 ## Filer
 
@@ -78,6 +79,8 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `src/simulated.js` | simulerede passagerer |
 | `src/hands.js` | dine egne hænder som handsker |
 | `src/audio.js` | pladsholderlyd lavet med Web Audio |
+| `src/narration.js` | afspiller speaket i takt med turen |
+| `audio/speak/` | lydfilerne med speak (mp3) |
 | `src/ui/` | skærme i bussen, knapperne foran sædet, startside og skærmvisning |
 | `src/xr.js`, `src/desktop.js` | VR-session og mus/taster |
 | `src/network.js` | tom indtil trin 2 |

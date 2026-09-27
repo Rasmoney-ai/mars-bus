@@ -48,11 +48,24 @@ export const BUS = {
 
 // --- Timeline --------------------------------------------------------------
 export const TIMELINE = {
-  introSeconds: 5,          // welcome text before the countdown
+  introSeconds: 14,         // welcome (speak) before the countdown
   countdownSeconds: 5,      // 5-4-3-2-1, then departure
   defaultStopSeconds: 25,
-  finalStopSeconds: 20,     // hold at the base before "Turen er slut"
+  finalStopSeconds: 25,     // hold at the base before "Turen er slut"
   tableStep: 0.02,          // resolution of the precomputed motion table
+};
+
+// --- Narration (speak) -----------------------------------------------------
+// One sound file per part of the ride, named in src/route.js. Missing files
+// are simply skipped, so the ride also works without them.
+export const NARRATION = {
+  folder: 'audio/speak/',
+  // Seconds from the start of a part until its speak begins, so it does not
+  // talk over the signal at departure and the chime at each stop.
+  delay: { start: 0.5, drive: 1.5, stop: 2.5 },
+  volume: 1.0,
+  // Re-align the speak with the ride time if it drifts more than this (s).
+  resyncSeconds: 0.3,
 };
 
 // --- World -----------------------------------------------------------------
