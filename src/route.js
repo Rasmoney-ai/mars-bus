@@ -29,7 +29,7 @@ export const ROUTE = [
     stop: {
       id: 'cliff', name: 'Murray Buttes', look: 'left',
       text: 'Curiosity og klippetårnene til venstre',
-      hold: 30,
+      hold: 33,
       speakOnWay: '02-mod-murray-buttes', speak: '03-murray-buttes',
     },
   },

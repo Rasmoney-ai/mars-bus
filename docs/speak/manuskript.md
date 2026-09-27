@@ -16,15 +16,15 @@ Speaket starter lidt efter hvert afsnits begyndelse: 1,5 sekund efter bussen kø
 |---|---|---|---|---|---|
 | 1 | `01-velkomst.mp3` | Velkomst ved landingsmodulet | 0:01 | 13 sek. | 25 |
 | 2 | `02-mod-murray-buttes.mp3` | Kørsel mod Murray Buttes | 0:21 | 69 sek. | 110-130 |
-| 3 | `03-murray-buttes.mp3` | Stop: Murray Buttes og Curiosity | 1:32 | 27 sek. | 50 |
-| 4 | `04-mod-krateret.mp3` | Kørsel mod Krateret | 2:01 | 67 sek. | 110-130 |
-| 5 | `05-krateret.mp3` | Stop: Krateret | 3:11 | 22 sek. | 40 |
-| 6 | `06-mod-sandklitterne.mp3` | Kørsel mod Sandklitterne | 3:35 | 70 sek. | 110-130 |
-| 7 | `07-sandklitterne.mp3` | Stop: Sandklitterne | 4:48 | 22 sek. | 40 |
-| 8 | `08-mod-basen.mp3` | Kørsel mod Marsbasen | 5:12 | 77 sek. | 120-140 |
-| 9 | `09-marsbasen.mp3` | Ankomst til Marsbasen | 6:31 | 22 sek. | 40 |
+| 3 | `03-murray-buttes.mp3` | Stop: Murray Buttes og Curiosity | 1:32 | 30 sek. | 60 |
+| 4 | `04-mod-krateret.mp3` | Kørsel mod Krateret | 2:04 | 67 sek. | 110-130 |
+| 5 | `05-krateret.mp3` | Stop: Krateret | 3:14 | 22 sek. | 40 |
+| 6 | `06-mod-sandklitterne.mp3` | Kørsel mod Sandklitterne | 3:38 | 70 sek. | 110-130 |
+| 7 | `07-sandklitterne.mp3` | Stop: Sandklitterne | 4:51 | 22 sek. | 40 |
+| 8 | `08-mod-basen.mp3` | Kørsel mod Marsbasen | 5:15 | 77 sek. | 120-140 |
+| 9 | `09-marsbasen.mp3` | Ankomst til Marsbasen | 6:34 | 22 sek. | 40 |
 
-Hele turen varer ca. 6 min. 54 sek.
+Hele turen varer ca. 6 min. 57 sek.
 
 Teksterne herunder er **udkast**. Ret dem frit, de er kun et bud på noget, der passer til tiderne.
 
@@ -54,10 +54,10 @@ Teksterne herunder er **udkast**. Ret dem frit, de er kun et bud på noget, der 
 
 ## 3. Stop: Murray Buttes og Curiosity
 
-- **Fil:** `03-murray-buttes.mp3`, ca. 27 sekunder
-- **Eleverne ser:** Bussen holder stille. Til **venstre** står de høje lagdelte klippetårne Murray Buttes. Foran dem, ca. 12 meter fra bussen, holder roveren Curiosity, støvet efter mange år på Mars. Skærmen viser: "Curiosity og klippetårnene til venstre".
+- **Fil:** `03-murray-buttes.mp3`, ca. 30 sekunder
+- **Eleverne ser:** Bussen holder stille. Til **venstre** står de høje lagdelte klippetårne Murray Buttes. Foran dem, ca. 12 meter fra bussen, arbejder roveren Curiosity. Den er lige kørt hen til en sten og holder stille ved den. Efter ca. 15 sekunder drejer den og kører langsomt videre til en ny sten. Skærmen viser: "Curiosity og klippetårnene til venstre".
 
-> Se til venstre. De høje klipper hedder Murray Buttes. Kan I se striberne? Hvert lag er sand og mudder fra en sø for milliarder af år siden. Foran klipperne holder roveren Curiosity. Den kørte forbi her i år totusind og seksten og tog billeder af klipperne. I dag er den et minde om de første rejser til Mars.
+> Se til venstre. De høje klipper hedder Murray Buttes. Kan I se striberne? Hvert lag er sand og mudder fra en sø for milliarder af år siden. Og dér er roveren Curiosity. Den er en robot-geolog. Den kører hen til en sten, skyder på den med en laser og borer små prøver ud, som den undersøger i sit eget lille laboratorium.
 
 ## 4. Kørsel mod Krateret
 
