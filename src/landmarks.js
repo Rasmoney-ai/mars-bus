@@ -87,13 +87,7 @@ function wallQuad(b, p0, p1, p2, p3, color, center) {
   else b.quad(p0, p3, p2, p1, color);
 }
 
-// Horizontal quad/triangle facing up.
-function flatQuad(b, p0, p1, p2, p3, color) {
-  const n = new THREE.Vector3().subVectors(p1, p0).cross(new THREE.Vector3().subVectors(p3, p0));
-  if (n.y >= 0) b.quad(p0, p1, p2, p3, color);
-  else b.quad(p0, p3, p2, p1, color);
-}
-
+// Horizontal triangle facing up.
 function flatTri(b, p0, p1, p2, color) {
   const n = new THREE.Vector3().subVectors(p1, p0).cross(new THREE.Vector3().subVectors(p2, p0));
   if (n.y >= 0) b.triangle(p0, p1, p2, color);
