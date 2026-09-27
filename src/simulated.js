@@ -19,7 +19,7 @@ export class PassengerSimulation {
     this.timeline = timeline;
     // Point of interest for each stop, in bus-local coordinates at that stop.
     const targets = {
-      landing: { ...layout.lander, y: 3 },
+      landing: { ...layout.lander, y: 7 },
       cliff: { ...layout.mesa, y: layout.mesa.height * 0.5 },
       crater: { ...layout.crater, y: -layout.crater.depth * 0.6 },
       dunes: { ...layout.dunes, y: 1 },

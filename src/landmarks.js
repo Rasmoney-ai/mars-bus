@@ -1,4 +1,4 @@
-// Landmarks along the route: the lander at the start, a group of buttes,
+// Landmarks along the route: the lander at the start (lander.js), a group of buttes,
 // the base at the end and small numbered signs at the stops.
 // All low-poly, built in code, with baked lighting (see terrain.js).
 
@@ -6,7 +6,8 @@ import * as THREE from 'three';
 import { WORLD } from './config.js';
 import { hash2, valueNoise } from './util/noise.js';
 import { MeshBuilder, compose, bakedMaterial } from './util/mesh.js';
-import { worldLight, headingVectors } from './terrain.js';
+import { worldLight, headingVectors, sunDirection } from './terrain.js';
+import { buildLander } from './lander.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -101,33 +102,25 @@ function addLocal(b, frame, geo, x, y, z, color, rot = null, scale = null, shade
   geo.dispose();
 }
 
-// The lander the students arrived in, parked next to the start.
-function addLander(b, terrain, p) {
-  const y = terrain.heightAt(p.x, p.z);
-  const frame = compose(p.x, y, p.z, [0, p.heading + 0.4, 0]);
-  const white = '#dfe2e4', gold = '#d2a441', dark = '#4a4d52', grey = '#9aa0a6';
-  addLocal(b, frame, new THREE.CylinderGeometry(1.7, 2.1, 2.4, 8), 0, 3.0, 0, white);
-  addLocal(b, frame, new THREE.ConeGeometry(1.7, 1.6, 8), 0, 5.0, 0, white);
-  addLocal(b, frame, new THREE.CylinderGeometry(2.15, 2.15, 0.55, 8), 0, 2.0, 0, gold);
-  addLocal(b, frame, new THREE.ConeGeometry(0.75, 1.0, 8, 1, true), 0, 1.25, 0, dark, [Math.PI, 0, 0]);
-  addLocal(b, frame, new THREE.CylinderGeometry(0.08, 0.08, 1.6, 5), 0, 6.4, 0, grey);
-  addLocal(b, frame, new THREE.ConeGeometry(0.45, 0.25, 8), 0, 7.2, 0, grey, [Math.PI, 0, 0]);
-  for (let k = 0; k < 4; k++) {
-    const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
-    const top = V(Math.cos(a) * 1.9, 2.0, Math.sin(a) * 1.9);
-    const foot = V(Math.cos(a) * 3.6, 0.15, Math.sin(a) * 3.6);
-    const mid = top.clone().add(foot).multiplyScalar(0.5);
-    const len = top.distanceTo(foot);
-    const leg = new THREE.CylinderGeometry(0.11, 0.11, len, 5);
-    const q = new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), top.clone().sub(foot).normalize());
-    const m = new THREE.Matrix4().compose(mid, q, V(1, 1, 1));
-    b.geometry(leg, new THREE.Matrix4().multiplyMatrices(frame, m), grey);
-    leg.dispose();
-    addLocal(b, frame, new THREE.CylinderGeometry(0.45, 0.55, 0.16, 8), foot.x, 0.08, foot.z, grey);
+// The lander the pupils arrived in (LM-03, made with Claude Design), with
+// its hatch and stairs turned towards the bus at the start.
+function buildLanderGroup(terrain) {
+  const L = terrain.layout;
+  const p = L.lander, bus = L.stop.landing;
+  const yaw = Math.atan2(bus.x - p.x, bus.z - p.z);
+  const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+  const sunDir = sunDirection().applyQuaternion(q.clone().invert());
+  let r = 0, g = 0, b = 0;
+  const c = new THREE.Color();
+  for (let k = 0; k < 8; k++) {
+    const a = (k / 8) * Math.PI * 2;
+    c.set(terrain.surfaceColor(p.x + Math.cos(a) * 11.5, p.z + Math.sin(a) * 11.5));
+    r += c.r / 8; g += c.g / 8; b += c.b / 8;
   }
-  // Two solar wings.
-  addLocal(b, frame, new THREE.BoxGeometry(3.2, 0.06, 1.3), 3.4, 3.4, 0, '#27365e', [0, 0, 0.25]);
-  addLocal(b, frame, new THREE.BoxGeometry(3.2, 0.06, 1.3), -3.4, 3.4, 0, '#27365e', [0, 0, -0.25]);
+  const { group } = buildLander(THREE, { sunDir, groundColor: `#${c.setRGB(r, g, b).getHexString()}` });
+  group.position.set(p.x, terrain.heightAt(p.x, p.z), p.z);
+  group.quaternion.copy(q);
+  return group;
 }
 
 // The base: domes, habitat tubes, a greenhouse, solar panels and an airlock
@@ -258,7 +251,6 @@ export function buildLandmarks(terrain) {
   group.name = 'landmarks';
   const b = new MeshBuilder(worldLight());
   L.buttes.forEach((m, i) => addButte(b, terrain, m, WORLD.seed + 10 + i));
-  addLander(b, terrain, L.lander);
   addBase(b, terrain, L.base);
   const { signs, poles } = buildStopSigns(terrain);
   const mesh = new THREE.Mesh(b.build(), bakedMaterial());
@@ -268,5 +260,6 @@ export function buildLandmarks(terrain) {
   poleMesh.matrixAutoUpdate = false;
   group.add(poleMesh, signs);
   group.add(buildBaseSign(terrain, L.base));
+  group.add(buildLanderGroup(terrain));
   return group;
 }

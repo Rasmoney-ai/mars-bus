@@ -236,6 +236,16 @@ export class Terrain {
     return h11 + (h01 - h11) * (1 - fx) + (h10 - h11) * (1 - fz);
   }
 
+  // The colour the flat ground shows on screen at (x, z), as an sRGB hex
+  // string (baked light and the average of the detail texture included).
+  // Used so the lander's ground shadow fades exactly into the terrain.
+  surfaceColor(x, z) {
+    const c = this.groundColor(x, z, this.heightAt(x, z), 1, new THREE.Color());
+    c.multiplyScalar(shadeFactor(new THREE.Vector3(0, 1, 0), worldLight()) * 1.1);
+    c.r *= 0.86; c.g *= 0.86 * 0.97; c.b *= 0.86 * 0.95;
+    return `#${c.getHexString()}`;
+  }
+
   distanceToRoad(x, z) {
     return this.road.nearest(x, z).d;
   }
@@ -256,9 +266,6 @@ export class Terrain {
     // Lighter dust on the crater floor.
     const rc = Math.hypot(x - L.crater.x, z - L.crater.z) / L.crater.radius;
     if (rc < 0.8) out.lerp(COLORS.craterFloor, (1 - smoothstep(0.35, 0.75, rc)) * 0.6);
-    // Scorched ground around the lander.
-    const dl = Math.hypot(x - L.lander.x, z - L.lander.z);
-    if (dl < 20) out.lerp(COLORS.scorch, (1 - smoothstep(4, 18, dl)) * 0.75);
     // Tiny per-triangle variation for the low-poly look.
     out.multiplyScalar(0.94 + 0.12 * hash2(Math.floor(x * 3.1), Math.floor(z * 3.7), seed + 5));
     return out;
@@ -334,7 +341,6 @@ const COLORS = {
   slope: new THREE.Color('#6e3320'),
   dune: new THREE.Color('#4a3833'),
   craterFloor: new THREE.Color('#c58a62'),
-  scorch: new THREE.Color('#3b2620'),
   rockA: new THREE.Color('#5a2f20'),
   rockB: new THREE.Color('#8a4c31'),
 };
