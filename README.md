@@ -52,7 +52,7 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 
 - `src/config.js`: alle grænser samlet ét sted:
   - komfort: fart, acceleration, drejehastighed, tonetider
-  - sæder: øjenhøjde, hjelmfarver og hvor lave ryglænene er
+  - sæder: øjenhøjde, farven på hjelmens halsbånd og hvor lave ryglænene er
   - tider for velkomst, nedtælling og stop
   - landskab, dis og lys
 - `src/route.js`: ruten (lige stykker og sving) og stoppene med navne og tekster.
@@ -70,6 +70,8 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `src/marsBus.js` | busmodellen "R-10", lavet med Claude Design (sæder, vinduer, instrumentbræt, hjul) |
 | `src/bus.js` | sætter modellen ind i turen: sædepladser, levende kort, infoskærm og hjul |
 | `src/terrain.js`, `src/landmarks.js` | Mars-landskab, vej, sten, himmel og landemærker |
+| `src/suitGear.js` | hjelm og handsker, lavet med Claude Design |
+| `src/suit.js` | gør hjelm og handsker lette nok til brillen |
 | `src/passengers.js` | tegner passagerer (hjelm og handsker) ud fra data |
 | `src/simulated.js` | simulerede passagerer |
 | `src/hands.js` | dine egne hænder som handsker |
