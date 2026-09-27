@@ -61,7 +61,10 @@ export class PassengerSimulation {
   }
 
   // Returns the passenger list for time t (all seats; the view skips your own).
-  update(t) {
+  // eyeHeight: the user's own eye height, so classmates sit at the same
+  // height as you (defaults to SEATS.eyeHeight).
+  update(t, eyeHeight = SEATS.eyeHeight) {
+    this.eyeHeight = eyeHeight;
     const phase = this.timeline.phaseAt(Math.max(t, 0));
     for (const p of this.list) this._simulate(p, t, phase);
     return this.list;
@@ -105,7 +108,7 @@ export class PassengerSimulation {
     const h = (k) => hash2(n, k, 7);
 
     // Head: gentle look-around from slow sine waves (per-seat phases).
-    const eye = SEATS.eyeHeight + (h(1) - 0.5) * 0.1;
+    const eye = (this.eyeHeight ?? SEATS.eyeHeight) + (h(1) - 0.5) * 0.1;
     let yaw = 22 * DEG * Math.sin((2 * Math.PI * t) / (9 + h(2) * 8) + h(3) * 6.28)
       + 10 * DEG * Math.sin((2 * Math.PI * t) / (5 + h(4) * 3) + h(5) * 6.28);
     let pitch = -4 * DEG + 5 * DEG * Math.sin((2 * Math.PI * t) / (7 + h(6) * 5) + h(7) * 6.28);

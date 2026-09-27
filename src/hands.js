@@ -1,11 +1,11 @@
 // The user's own hands, drawn as astronaut gloves (Claude Design, see
 // suit.js) driven by WebXR hand tracking (optional feature). Each glove bone
 // is named like a WebXR joint, so the joint poses are copied straight onto
-// the bones. With controllers instead, a glove in a resting pose sits on
-// each controller. Controllers are never required.
+// the bones. With controllers no glove is drawn (a still glove cannot grip
+// the controller naturally); the pointer ray still shows at the seat panel.
+// Controllers are never required.
 
-import * as THREE from 'three';
-import { liveGlove, bakedGlove, JOINTS } from './suit.js';
+import { liveGlove, JOINTS } from './suit.js';
 
 export class UserHands {
   constructor(renderer, rig) {
@@ -24,26 +24,6 @@ export class UserHands {
       hand.addEventListener('disconnected', () => { this.handedness[i] = null; });
     });
 
-    // Controller fallback: a glove in a resting pose on each grip.
-    this.grips = [renderer.xr.getControllerGrip(0), renderer.xr.getControllerGrip(1)];
-    this.isHand = [false, false];
-    this.gripGloves = [];
-    const gripMat = new THREE.MeshLambertMaterial({ vertexColors: true });
-    this.grips.forEach((grip, i) => {
-      rig.add(grip);
-      grip.addEventListener('connected', (e) => {
-        this.isHand[i] = !!e.data.hand;
-        const side = e.data.handedness === 'left' ? -1 : 1;
-        grip.clear();
-        const glove = new THREE.Mesh(bakedGlove(side, 'rest', 1), gripMat);
-        glove.rotation.set(-0.6, 0, side * Math.PI / 2);
-        glove.position.set(0, 0, 0.05);
-        glove.visible = !this.isHand[i];
-        grip.add(glove);
-        this.gripGloves[i] = glove;
-      });
-      grip.addEventListener('disconnected', () => { grip.clear(); this.gripGloves[i] = null; });
-    });
   }
 
   // Kept for compatibility: the gloves are white with gold details.
@@ -73,6 +53,5 @@ export class UserHands {
       seen[side] = true;
     });
     for (const side of ['left', 'right']) this.gloves[side].group.visible = seen[side];
-    this.gripGloves.forEach((g, i) => { if (g) g.visible = !this.isHand[i]; });
   }
 }

@@ -102,6 +102,7 @@ camera.add(fade);
 // --- Actions ------------------------------------------------------------------
 
 let autoPaused = false;
+let userEyeReset = false;
 let comfortSwitch = null;
 const SWITCH_HALF = 0.35; // seconds to fade out (and in again)
 
@@ -206,6 +207,7 @@ desktop.onClick = (x, y) => {
 
 const vr = new VRSession(renderer, {
   onStart() {
+    userEyeReset = true;
     dom.hideAll();
     desktop.enabled = false;
     applySeat();
@@ -241,10 +243,14 @@ applySeat();
 const view = { pose: {}, fade: 0, phase: null };
 const NO_PASSENGERS = [];
 let lastT = clock.getTime();
+let userEye = SEATS.eyeHeight;
+let lastFrame = performance.now();
 let fps = 0, frames = 0, fpsStart = performance.now();
 
 function frame() {
   const now = performance.now();
+  const frameDt = Math.min(0.1, (now - lastFrame) / 1000);
+  lastFrame = now;
   const t = clock.getTime();
 
   // Sound cues passed since the last frame (not when jumping in time).
@@ -274,7 +280,13 @@ function frame() {
 
   const status = timeline.status(t, settings.comfort, view.pose);
   screens.update(status, view, clock.playing, now);
-  passengers.update(settings.simulated ? simulation.update(t) : NO_PASSENGERS, settings.seat);
+  // Simulated classmates follow your own eye height (slowly, so they do not
+  // bob when you move your head).
+  if (vr.active && camera.position.y > 0.5 && camera.position.y < 2.2) {
+    if (userEyeReset) { userEye = camera.position.y; userEyeReset = false; }
+    userEye += (camera.position.y - userEye) * Math.min(1, frameDt / 4);
+  }
+  passengers.update(settings.simulated ? simulation.update(t, userEye) : NO_PASSENGERS, settings.seat);
 
   if (vr.active) {
     hands.update();
