@@ -25,7 +25,7 @@ export const ROUTE = [
   { straight: 38 },
   {
     stop: {
-      id: 'cliff', name: 'Klippevæggen', look: 'left',
+      id: 'cliff', name: 'Klippetårnene', look: 'left',
       text: 'Se de lagdelte klipper til venstre',
     },
   },
