@@ -11,7 +11,7 @@
 // the Mars-bussen app, all marked "APP:":
 // - opts.seatBackScale: lower seat backs, so pupils can see out ahead.
 // - opts.liveScreens: leave out the static route map and status strip; the
-//   app draws a live map on the dashboard pod instead (returned as dashPod).
+//   app draws a live map on the sloping dashboard face (returned as dashFace).
 
 export function buildMarsBus(THREE, opts = {}) {
   const { seatBackScale = 1, liveScreens = false } = opts; // APP
@@ -341,12 +341,15 @@ export function buildMarsBus(THREE, opts = {}) {
   add('light', BB(-1.1, 0.702, -3.12, 1.1, 0.712, -3.1), [0.35, 0.85, 1.0]);
   add('sign', xf(atlasPlane(0.22, 0.22, R.badge), [0, 0.22, -2.996]));
   const pod = new THREE.Matrix4().compose(V3(0, 0.93, -3.28), new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.26, 0, 0)), V3(1, 1, 1));
-  add('trim', new THREE.BoxGeometry(0.8, 0.56, 0.05).applyMatrix4(pod));
-  if (!liveScreens) { // APP: the app draws a live map here instead
+  if (!liveScreens) { // APP: the app puts a live map on the dashboard face instead (keeps the windshield clear)
+    add('trim', new THREE.BoxGeometry(0.8, 0.56, 0.05).applyMatrix4(pod));
     add('sign', atlasPlane(0.72, 0.405, R.map).translate(0, 0.05, 0.026).applyMatrix4(pod));
     add('sign', atlasPlane(0.72, 0.09, R.status).translate(0, -0.215, 0.026).applyMatrix4(pod));
+    add('trim', BB(-0.1, 0.6, -3.36, 0.1, 0.8, -3.24));
   }
-  add('trim', BB(-0.1, 0.6, -3.36, 0.1, 0.8, -3.24));
+  // APP: the sloping face of the dashboard (z -3.0, y 0.4 up to z -3.1, y 0.7), facing the passengers.
+  const dashFace = new THREE.Matrix4().compose(V3(0, 0.55, -3.05).addScaledVector(V3(0, 0.316, 0.949), 0.006),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.322, 0, 0)), V3(1, 1, 1));
 
   // ---------- exterior ----------
   [1, -1].forEach(s => {
@@ -471,5 +474,5 @@ export function buildMarsBus(THREE, opts = {}) {
     wheelsGroup.add(w); wheels.push(w);
   }));
 
-  return { group, seats, wheels, wheelRadius: WR, groundY: WY - WR, dashPod: pod }; // APP: dashPod
+  return { group, seats, wheels, wheelRadius: WR, groundY: WY - WR, dashFace }; // APP: dashFace
 }
