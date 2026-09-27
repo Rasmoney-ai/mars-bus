@@ -568,10 +568,11 @@ function buildRocks(terrain) {
     place(L.crater.x + Math.cos(a) * d, L.crater.z + Math.sin(a) * d, 0.2 + Math.pow(rng(), 2) * 1.6);
   }
 
-  // The rocks Curiosity drives up to and studies.
+  // The rocks Curiosity drives up to and studies; the tip of its arm rests
+  // on the near side.
   L.rover.rocks.forEach((r, i) => {
     const size = 0.5 + 0.1 * i;
-    m.compose(pv.set(r.x, terrain.heightAt(r.x, r.z) - size * 0.25, r.z), q.setFromEuler(e.set(0.2, 1.3 * i + 0.4, 0.1)), sv.set(size * 1.2, size * 0.75, size));
+    m.compose(pv.set(r.x, terrain.heightAt(r.x, r.z) - 0.03, r.z), q.setFromEuler(e.set(0, 1.3 * i + 0.4, 0)), sv.set(size * 0.9, 0.32, size * 0.75));
     builder.geometry(protos[3 + i], m, col.copy(COLORS.rockA).lerp(COLORS.rockB, 0.3 + 0.4 * i));
   });
 
@@ -639,7 +640,8 @@ export function createWorld(path) {
   group.add(terrain.buildMeshes(makeDetailTexture()));
   group.add(buildRoad(path));
   group.add(buildRocks(terrain));
-  group.add(buildLandmarks(terrain));
+  const landmarks = buildLandmarks(terrain);
+  group.add(landmarks);
   const sky = buildSky();
 
   const fog = new THREE.Fog(new THREE.Color(WORLD.skyHorizon), WORLD.fogNear, WORLD.fogFar);
@@ -652,7 +654,7 @@ export function createWorld(path) {
     fog,
     background,
     layout: terrain.layout,
-    rover: group.getObjectByName('Curiosity_MSL'),
+    rover: landmarks.userData.rover,
     // Keep the sky centred on the bus (it never rotates).
     update(pose) {
       sky.position.set(pose.x, 0, pose.z);
