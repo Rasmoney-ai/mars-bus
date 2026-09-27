@@ -4,7 +4,7 @@ Guidens replikker til turen, én fil pr. scene i manuset "Mars-bussen: manus til
 
 | Fil | Scene | Længde |
 |---|---|---|
-| `00-foer-afgang.mp3` | Før afgang: Landingspladsen | mangler endnu |
+| `00-foer-afgang.mp3` | Før afgang: Landingspladsen | 26,2 s |
 | `01-mod-klitterne.mp3` | Kørsel mod Klitterne | 29,7 s |
 | `02-klitterne.mp3` | Stop 1: Klitterne | 28,3 s |
 | `03-mod-soebunden.mp3` | Kørsel mod Søbunden | 13,1 s |
