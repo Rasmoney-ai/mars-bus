@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mars-bussen</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+
+  <section id="start" class="overlay">
+    <div class="card">
+      <header class="title">
+        <canvas id="badge" width="256" height="256" aria-hidden="true"></canvas>
+        <div>
+          <h1>Mars-bussen</h1>
+          <p class="lead">Fra landingspladsen til Marsbasen</p>
+        </div>
+      </header>
+
+      <div class="columns">
+        <div class="seat-picker">
+          <h2>Vælg din plads</h2>
+          <div class="bus-plan">
+            <div class="bus-front">Forrest</div>
+            <div id="seats" class="seats"></div>
+          </div>
+          <p id="seat-label" class="seat-label"></p>
+        </div>
+
+        <div class="side">
+          <div class="options">
+            <label class="toggle">
+              <input type="checkbox" id="opt-comfort">
+              <span class="switch"></span>
+              <span class="text"><strong>Komforttilstand</strong>
+                <small>Bussen kører ikke mellem stoppene. Billedet toner til sort og ind igen ved næste stop.</small></span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="opt-sim" checked>
+              <span class="switch"></span>
+              <span class="text"><strong>Andre passagerer</strong>
+                <small>Viser simulerede passagerer på de andre pladser.</small></span>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="btn-vr" class="primary" disabled>Gå ind i VR</button>
+            <button id="btn-desktop" disabled>Se på skærmen</button>
+          </div>
+          <p id="vr-status" class="note">Indlæser landskabet …</p>
+          <p class="note">Sid ned på stolen, og kig lige frem. Hold Meta-knappen inde for at rette billedet ind.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="hud" hidden>
+    <div class="hud-status">
+      <div id="hud-title"></div>
+      <div id="hud-subtitle"></div>
+    </div>
+    <div class="hud-help" id="hud-help">
+      <strong>Taster</strong>
+      <span>Træk med musen: kig rundt</span>
+      <span>Mellemrum: start / pause</span>
+      <span>← →: spol 10 sekunder</span>
+      <span>N / F: næste / forrige stop</span>
+      <span>R: forfra</span>
+      <span>K: komforttilstand</span>
+      <span>P: passagerer til/fra</span>
+      <span>1–9, 0: skift plads</span>
+      <span>V: se bussen udefra</span>
+      <span>M: lyd til/fra</span>
+      <span>H: skjul hjælp · Esc: menu</span>
+    </div>
+    <div class="hud-bar">
+      <button id="hud-play" title="Start / pause (mellemrum)">▶</button>
+      <button id="hud-prev" title="Forrige stop (F)">⏮</button>
+      <button id="hud-next" title="Næste stop (N)">⏭</button>
+      <span id="hud-time" class="time">0:00 / 0:00</span>
+      <div class="scrub">
+        <input id="hud-scrub" type="range" min="0" max="1" step="0.1" value="0" aria-label="Tidslinje">
+        <div id="hud-ticks" class="ticks"></div>
+      </div>
+      <button id="hud-restart" title="Forfra (R)">↺</button>
+      <button id="hud-menu" title="Menu (Esc)">Menu</button>
+      <span id="hud-fps" class="fps"></span>
+    </div>
+  </section>
+
+  <div id="error" class="error" hidden></div>
+
+  <script>
+    // Show errors on the page (the Quest has no visible console).
+    window.addEventListener('error', function (e) {
+      var box = document.getElementById('error');
+      box.textContent = 'Fejl: ' + (e.message || e) + (e.filename ? '\n' + e.filename + ':' + e.lineno : '');
+      box.hidden = false;
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      var box = document.getElementById('error');
+      box.textContent = 'Fejl: ' + (e.reason && e.reason.message ? e.reason.message : e.reason);
+      box.hidden = false;
+    });
+  </script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
