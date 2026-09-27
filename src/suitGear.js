@@ -8,9 +8,9 @@
 // Needs a DOM for the canvas textures.
 //
 // Made with Claude Design (handoff "Mars-sightseeing-bus R-10"). Change for the
-// Mars-bussen app, marked "APP:": buildGlove(..., { lowDetail: true }) builds a
-// lighter glove for the other passengers, who are seen from further away;
-// buildHelmet(..., { lowDetail: true }) does the same for the helmet.
+// Mars-bussen app, marked "APP:": buildGlove(..., { detail }) and
+// buildHelmet(..., { detail }) build lighter versions for the other passengers
+// (detail 1 = full, 0.5 = near passengers, 0.3 = passengers further away).
 
 export const JOINTS = [
   'wrist',
@@ -119,8 +119,8 @@ function mergeGroups(THREE, buckets, order, skinned) {
 /* ------------------------------------------------------------------ HELMET
    Origin = the wearer's eye point (attach to the avatar head / XR camera pose).
    -Z forward. Opaque dark visor, no interior. */
-export function buildHelmet(THREE, { number = 1, stripe = '#d9ad4c', lowDetail = false } = {}) { // APP: lowDetail
-  const q = (n) => (lowDetail ? Math.max(6, Math.round(n * 0.5)) : n); // APP: fewer segments
+export function buildHelmet(THREE, { number = 1, stripe = '#d9ad4c', detail = 1 } = {}) { // APP: detail
+  const q = (n) => (detail < 1 ? Math.max(6, Math.round(n * detail)) : n); // APP: fewer segments
   const M = materials(THREE);
   const stripeMat = stripe === '#d9ad4c' ? M.gold : new THREE.MeshStandardMaterial({ name: 'helmet_stripe', color: stripe, roughness: 0.4, metalness: 0.2 });
   const C = new THREE.Vector3(0, 0.03, 0.07), R = 0.165;             // shell centre relative to eyes
@@ -130,9 +130,9 @@ export function buildHelmet(THREE, { number = 1, stripe = '#d9ad4c', lowDetail =
   const FWD = 1.5 * Math.PI;                                         // SphereGeometry phi that faces -Z
 
   const sph = (r, w, h, ...p) => at(new THREE.SphereGeometry(r, q(w), q(h), ...p), 0, 0, 0); // APP: q()
-  const hArc = (th, p1, p2, r, tube, seg = 40) => new THREE.TorusGeometry(r * Math.sin(th), tube, 8, seg, p2 - p1)
+  const hArc = (th, p1, p2, r, tube, seg = 40) => new THREE.TorusGeometry(r * Math.sin(th), tube, q(8), q(seg), p2 - p1)
     .rotateX(Math.PI / 2).rotateY(-(Math.PI - p2)).translate(C.x, C.y + r * Math.cos(th), C.z);
-  const vArc = (ph, t1, t2, r, tube, seg = 24) => new THREE.TorusGeometry(r, tube, 8, seg, t2 - t1)
+  const vArc = (ph, t1, t2, r, tube, seg = 24) => new THREE.TorusGeometry(r, tube, q(8), q(seg), t2 - t1)
     .rotateZ(Math.PI / 2 - t2).rotateY(ph + Math.PI).translate(C.x, C.y, C.z);
   const VW = 1.08, HW = 1.13, TOP = 0.98, HB = 2.05, CHIN = 2.3, RH = R + 0.012;
 
@@ -149,15 +149,15 @@ export function buildHelmet(THREE, { number = 1, stripe = '#d9ad4c', lowDetail =
 
   // neck bearing
   const yN = -Math.cos(2.35) * R, neckR = Math.sin(2.35) * R;
-  put('metal', at(new THREE.TorusGeometry(neckR + 0.006, 0.015, 10, 40).rotateX(Math.PI / 2), 0, -yN - 0.006, 0));
-  put('stripe', at(new THREE.CylinderGeometry(neckR + 0.016, neckR + 0.016, 0.024, 40, 1, true), 0, -yN - 0.03, 0));
-  put('metal', at(new THREE.TorusGeometry(neckR + 0.012, 0.009, 8, 40).rotateX(Math.PI / 2), 0, -yN - 0.046, 0));
-  put('rubber', at(new THREE.CylinderGeometry(neckR - 0.004, neckR - 0.004, 0.06, 32), 0, -yN - 0.035, 0));
+  put('metal', at(new THREE.TorusGeometry(neckR + 0.006, 0.015, q(10), q(40)).rotateX(Math.PI / 2), 0, -yN - 0.006, 0));
+  put('stripe', at(new THREE.CylinderGeometry(neckR + 0.016, neckR + 0.016, 0.024, q(40), 1, true), 0, -yN - 0.03, 0));
+  put('metal', at(new THREE.TorusGeometry(neckR + 0.012, 0.009, q(8), q(40)).rotateX(Math.PI / 2), 0, -yN - 0.046, 0));
+  put('rubber', at(new THREE.CylinderGeometry(neckR - 0.004, neckR - 0.004, 0.06, q(32)), 0, -yN - 0.035, 0));
 
   [-1, 1].forEach(s => {
     // visor pivot boss
-    put('shell', at(new THREE.CylinderGeometry(0.03, 0.034, 0.018, 24).rotateZ(Math.PI / 2), s * (RH + 0.004), -0.005, 0.005));
-    put('metal', at(new THREE.CylinderGeometry(0.011, 0.011, 0.006, 16).rotateZ(Math.PI / 2), s * (RH + 0.015), -0.005, 0.005));
+    put('shell', at(new THREE.CylinderGeometry(0.03, 0.034, 0.018, q(24)).rotateZ(Math.PI / 2), s * (RH + 0.004), -0.005, 0.005));
+    put('metal', at(new THREE.CylinderGeometry(0.011, 0.011, 0.006, q(16)).rotateZ(Math.PI / 2), s * (RH + 0.015), -0.005, 0.005));
     // helmet light + camera module on a short arm
     const d = new THREE.Vector3(s * 0.78, 0.55, -0.3).normalize();
     const p = C.clone().addScaledVector(d, RH + 0.03);
@@ -167,7 +167,7 @@ export function buildHelmet(THREE, { number = 1, stripe = '#d9ad4c', lowDetail =
     put('shell', new THREE.BoxGeometry(0.044, 0.03, 0.085).translate(p.x, p.y, p.z));
     put('rubber', new THREE.BoxGeometry(0.046, 0.032, 0.006).translate(p.x, p.y, p.z - 0.04));
     [-0.011, 0.011].forEach(dx => put('light', new THREE.CircleGeometry(0.0085, 16).rotateY(Math.PI).translate(p.x + dx, p.y, p.z - 0.0435)));
-    put('rubber', new THREE.CylinderGeometry(0.007, 0.007, 0.022, 12).rotateX(Math.PI / 2).translate(p.x, p.y - 0.022, p.z - 0.03));
+    put('rubber', new THREE.CylinderGeometry(0.007, 0.007, 0.022, q(12)).rotateX(Math.PI / 2).translate(p.x, p.y - 0.022, p.z - 0.03));
     put('metal', new THREE.CircleGeometry(0.0045, 12).rotateY(Math.PI).translate(p.x, p.y - 0.022, p.z - 0.0412));
   });
   // decals: badge on the right side, seat number on back and forehead
@@ -202,7 +202,9 @@ const REST_R = {                         // right hand, metres
 };
 const RADIUS = { thumb: [0.0135, 0.0115, 0.0105], 'index-finger': [0.0125, 0.0098, 0.009, 0.0085], 'middle-finger': [0.0125, 0.01, 0.0092, 0.0087], 'ring-finger': [0.0125, 0.0095, 0.0088, 0.0083], 'pinky-finger': [0.0115, 0.0086, 0.008, 0.0076] };
 
-export function buildGlove(THREE, handedness = 'right', { lowDetail = false } = {}) { // APP: lowDetail
+export function buildGlove(THREE, handedness = 'right', { detail = 1 } = {}) { // APP: detail
+  const lowDetail = detail < 1;
+  const q = (n) => (lowDetail ? Math.max(4, Math.round(n * detail)) : n); // APP: fewer segments
   const M = materials(THREE);
   const s = handedness === 'left' ? -1 : 1;
   const V = (a) => new THREE.Vector3(a[0] * s, a[1], a[2]);
@@ -233,7 +235,7 @@ export function buildGlove(THREE, handedness = 'right', { lowDetail = false } = 
   const B = { fabric: [], rubber: [], gold: [], metal: [], sign: [] };
   const idx = j => JOINTS.indexOf(j);
   const local = (k, j, g) => { g.applyMatrix4(new THREE.Matrix4().compose(P[j], Q[j], new THREE.Vector3(1, 1, 1))); B[k].push({ g, bone: idx(j) }); };
-  const seg = (len, r, sx = 1, sy = 1) => new THREE.CapsuleGeometry(r, Math.max(0.001, len), lowDetail ? 2 : 4, lowDetail ? 6 : 12).rotateX(Math.PI / 2).translate(0, 0, -len / 2).scale(sx, sy, 1); // APP: fewer segments
+  const seg = (len, r, sx = 1, sy = 1) => new THREE.CapsuleGeometry(r, Math.max(0.001, len), Math.max(1, Math.round(4 * detail)), Math.max(4, Math.round(12 * detail))).rotateX(Math.PI / 2).translate(0, 0, -len / 2).scale(sx, sy, 1); // APP: fewer segments
 
   FINGERS.forEach(f => {
     const chain = JOINTS.filter(j => j.startsWith(f + '-') && !j.endsWith('-tip'));
@@ -242,20 +244,20 @@ export function buildGlove(THREE, handedness = 'right', { lowDetail = false } = 
       const isDist = j.endsWith('distal');
       const L = isDist ? LEN[j] - r * 0.55 : LEN[j];
       local('fabric', j, isMeta ? seg(L, r, 1.05, 1.1) : seg(L, r));
-      if (!isMeta && !isDist && !lowDetail) local('fabric', j, new THREE.TorusGeometry(r * 1.02, r * 0.16, 6, 14).translate(0, 0, -L * 0.98));     // segment seams
-      if (isDist) local('rubber', j, new THREE.SphereGeometry(r * 0.95, 12, 8).scale(0.9, 0.45, 1.25).translate(0, -r * 0.62, -L * 0.72)); // grip pad
+      if (!isMeta && !isDist && !lowDetail) local('fabric', j, new THREE.TorusGeometry(r * 1.02, r * 0.16, q(6), q(14)).translate(0, 0, -L * 0.98));     // segment seams
+      if (isDist) local('rubber', j, new THREE.SphereGeometry(r * 0.95, q(12), q(8)).scale(0.9, 0.45, 1.25).translate(0, -r * 0.62, -L * 0.72)); // grip pad
       if (j.endsWith('phalanx-proximal') && f !== 'thumb') local('gold', j, new THREE.BoxGeometry(r * 1.5, r * 0.5, r * 1.3).translate(0, r * 0.95, -r * 0.35)); // knuckle guard
     });
   });
   // palm heel + cuff on the wrist bone
   local('fabric', 'wrist', seg(0.034, 0.02, 1.55, 0.78).translate(0, -0.001, -0.004));
-  const cuff = new THREE.CylinderGeometry(0.034, 0.047, 0.08, 28, 1, true).rotateX(Math.PI / 2).scale(1.18, 0.9, 1).translate(0, 0, 0.056);
+  const cuff = new THREE.CylinderGeometry(0.034, 0.047, 0.08, q(28), 1, true).rotateX(Math.PI / 2).scale(1.18, 0.9, 1).translate(0, 0, 0.056);
   local('fabric', 'wrist', cuff);
-  local('fabric', 'wrist', new THREE.CylinderGeometry(0.047, 0.047, 0.004, 28).rotateX(Math.PI / 2).scale(1.18, 0.9, 1).translate(0, 0, 0.097));
-  local('metal', 'wrist', new THREE.TorusGeometry(0.036, 0.0065, 8, 32).scale(1.18, 0.9, 1).translate(0, 0, 0.016));
-  local('gold', 'wrist', new THREE.TorusGeometry(0.043, 0.004, 6, 32).scale(1.18, 0.9, 1).translate(0, 0, 0.07));
+  local('fabric', 'wrist', new THREE.CylinderGeometry(0.047, 0.047, 0.004, q(28)).rotateX(Math.PI / 2).scale(1.18, 0.9, 1).translate(0, 0, 0.097));
+  local('metal', 'wrist', new THREE.TorusGeometry(0.036, 0.0065, q(8), q(32)).scale(1.18, 0.9, 1).translate(0, 0, 0.016));
+  local('gold', 'wrist', new THREE.TorusGeometry(0.043, 0.004, q(6), q(32)).scale(1.18, 0.9, 1).translate(0, 0, 0.07));
   // palm grip pad + back-of-hand badge on the middle metacarpal
-  local('rubber', 'middle-finger-metacarpal', new THREE.CylinderGeometry(0.021, 0.021, 0.004, 24).scale(1.05, 1, 1.0).translate(0.002 * s, -0.0138, -0.032));
+  local('rubber', 'middle-finger-metacarpal', new THREE.CylinderGeometry(0.021, 0.021, 0.004, q(24)).scale(1.05, 1, 1.0).translate(0.002 * s, -0.0138, -0.032));
   local('sign', 'middle-finger-metacarpal', atlasPlane(THREE, 0.03, 0.03, [0, 0, 512, 512], true).rotateX(-Math.PI / 2).translate(0, 0.0142, -0.03));
 
   const order = ['fabric', 'rubber', 'gold', 'metal', 'sign'];

@@ -20,72 +20,87 @@ const MAX = SEATS.count;
 
 // --- Renderer ------------------------------------------------------------------
 
+// Passengers further away than this (metres from your seat) are drawn with
+// less detail; you cannot see the difference at that distance.
+const FAR = 2.0;
+const DETAIL = { near: 0.5, far: 0.3 };
+
+// One set of instanced meshes (helmet parts and gloves) at a detail level.
+function makeSet(detail, materials) {
+  const helmet = helmetParts(detail);
+  const set = {
+    body: new THREE.InstancedMesh(helmet.body, materials.plain, MAX),
+    visor: new THREE.InstancedMesh(helmet.visor, new THREE.MeshBasicMaterial({ map: helmet.visorMap }), MAX),
+    stripes: new THREE.InstancedMesh(helmet.stripe, materials.tinted, MAX),
+    signMaterial: new THREE.MeshBasicMaterial({ map: helmet.signMap, toneMapped: false }),
+    gloves: {},
+    n: 0,
+    counts: { rest: { '-1': 0, 1: 0 }, point: { '-1': 0, 1: 0 } },
+  };
+  for (let i = 0; i < MAX; i++) set.stripes.setColorAt(i, new THREE.Color('#ffffff'));
+  // Seat number decals: one small mesh per seat number.
+  set.signs = helmet.signs.map((geo) => {
+    const m = new THREE.Mesh(geo, set.signMaterial);
+    m.matrixAutoUpdate = false;
+    m.visible = false;
+    m.frustumCulled = false;
+    return m;
+  });
+  for (const pose of ['rest', 'point']) {
+    for (const side of [-1, 1]) set.gloves[pose + side] = new THREE.InstancedMesh(bakedGlove(side, pose, detail), materials.plain, MAX);
+  }
+  set.meshes = [set.body, set.visor, set.stripes, ...Object.values(set.gloves)];
+  for (const m of set.meshes) {
+    m.count = 0;
+    m.frustumCulled = false;
+    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  }
+  return set;
+}
+
 export class PassengerView {
   constructor() {
     this.group = new THREE.Group();
     this.group.name = 'passengers';
-    const helmet = helmetParts();
-    const plain = new THREE.MeshLambertMaterial({ vertexColors: true });
-    const tinted = new THREE.MeshLambertMaterial({ color: '#ffffff' });
-    const visor = new THREE.MeshBasicMaterial({ map: helmet.visorMap });
-    this.signMaterial = new THREE.MeshBasicMaterial({ map: helmet.signMap, toneMapped: false });
-
-    // Helmet: body, visor and neck stripe (seat colour) for all passengers.
-    this.body = new THREE.InstancedMesh(helmet.body, plain, MAX);
-    this.visor = new THREE.InstancedMesh(helmet.visor, visor, MAX);
-    this.stripes = new THREE.InstancedMesh(helmet.stripe, tinted, MAX);
-    for (let i = 0; i < MAX; i++) this.stripes.setColorAt(i, new THREE.Color('#ffffff'));
-    // Seat number decals: one small mesh per seat number.
-    this.signs = helmet.signs.map((geo) => {
-      const m = new THREE.Mesh(geo, this.signMaterial);
-      m.matrixAutoUpdate = false;
-      m.visible = false;
-      m.frustumCulled = false;
-      this.group.add(m);
-      return m;
-    });
-    // Gloves in two still poses per hand.
-    this.gloves = {};
-    for (const pose of ['rest', 'point']) {
-      for (const side of [-1, 1]) this.gloves[pose + side] = new THREE.InstancedMesh(bakedGlove(side, pose), plain, MAX);
-    }
-    this.meshes = [this.body, this.visor, this.stripes, ...Object.values(this.gloves)];
-    for (const m of this.meshes) {
-      m.count = 0;
-      m.frustumCulled = false;
-      m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      this.group.add(m);
-    }
+    const materials = {
+      plain: new THREE.MeshLambertMaterial({ vertexColors: true }),
+      tinted: new THREE.MeshLambertMaterial({ color: '#ffffff' }),
+    };
+    this.sets = { near: makeSet(DETAIL.near, materials), far: makeSet(DETAIL.far, materials) };
+    for (const set of Object.values(this.sets)) this.group.add(...set.meshes, ...set.signs);
     this.seatColors = SEATS.colors.map((c) => new THREE.Color(c));
     this._origin = new THREE.Vector3();
+    this._own = new THREE.Vector3();
     this._p = new THREE.Vector3();
     this._q = new THREE.Quaternion();
     this._s = new THREE.Vector3(1, 1, 1);
     this._m = new THREE.Matrix4();
-    this._counts = { rest: { '-1': 0, 1: 0 }, point: { '-1': 0, 1: 0 } };
   }
 
   // passengers: array of passenger data (see top of file).
   // ownSeat: this user's seat, never drawn.
   update(passengers, ownSeat) {
-    const counts = this._counts;
-    counts.rest[-1] = counts.rest[1] = counts.point[-1] = counts.point[1] = 0;
-    for (const sign of this.signs) sign.visible = false;
-    let n = 0;
+    for (const set of Object.values(this.sets)) {
+      set.n = 0;
+      set.counts.rest[-1] = set.counts.rest[1] = set.counts.point[-1] = set.counts.point[1] = 0;
+      for (const sign of set.signs) sign.visible = false;
+    }
+    seatOrigin(ownSeat, this._own);
     for (const p of passengers) {
       if (!p || p.seat === ownSeat || p.seat < 1 || p.seat > MAX) continue;
       seatOrigin(p.seat, this._origin);
+      const set = this._origin.distanceTo(this._own) > FAR ? this.sets.far : this.sets.near;
       const head = p.head;
       if (head) {
+        const n = set.n++;
         this._place(head.position, head.quaternion);
-        this.body.setMatrixAt(n, this._m);
-        this.visor.setMatrixAt(n, this._m);
-        this.stripes.setMatrixAt(n, this._m);
-        this.stripes.setColorAt(n, this.seatColors[p.seat - 1]);
-        const sign = this.signs[p.seat - 1];
+        set.body.setMatrixAt(n, this._m);
+        set.visor.setMatrixAt(n, this._m);
+        set.stripes.setMatrixAt(n, this._m);
+        set.stripes.setColorAt(n, this.seatColors[p.seat - 1]);
+        const sign = set.signs[p.seat - 1];
         sign.matrix.copy(this._m);
         sign.visible = true;
-        n++;
       }
       const hands = p.hands || [];
       for (let i = 0; i < 2; i++) {
@@ -93,18 +108,20 @@ export class PassengerView {
         if (!h) continue;
         const side = i === 0 ? -1 : 1;
         const pose = h.pose === 'point' ? 'point' : 'rest';
-        const k = counts[pose][side]++;
+        const k = set.counts[pose][side]++;
         this._place(h.position, h.quaternion);
-        this.gloves[pose + side].setMatrixAt(k, this._m);
+        set.gloves[pose + side].setMatrixAt(k, this._m);
       }
     }
-    this.body.count = this.visor.count = this.stripes.count = n;
-    for (const pose of ['rest', 'point']) {
-      for (const side of [-1, 1]) this.gloves[pose + side].count = counts[pose][side];
-    }
-    for (const m of this.meshes) {
-      m.instanceMatrix.needsUpdate = true;
-      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    for (const set of Object.values(this.sets)) {
+      set.body.count = set.visor.count = set.stripes.count = set.n;
+      for (const pose of ['rest', 'point']) {
+        for (const side of [-1, 1]) set.gloves[pose + side].count = set.counts[pose][side];
+      }
+      for (const m of set.meshes) {
+        m.instanceMatrix.needsUpdate = true;
+        if (m.instanceColor) m.instanceColor.needsUpdate = true;
+      }
     }
   }
 

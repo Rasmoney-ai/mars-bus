@@ -46,13 +46,13 @@ const HELMET_ORDER = ['shell', 'visor', 'rubber', 'stripe', 'metal', 'light', 's
 
 // Helmet parts: body (one colour-per-part mesh), visor, neck stripe, and
 // the decals (badge and seat number) for each seat number.
-export function helmetParts() {
+export function helmetParts(detail = 0.5) {
   const byName = (mesh) => {
     const out = {};
     for (const g of mesh.geometry.groups) out[HELMET_ORDER[g.materialIndex]] = groupGeometry(mesh.geometry, g);
     return out;
   };
-  const first = buildHelmet(THREE, { number: 1, stripe: '#ffffff', lowDetail: true });
+  const first = buildHelmet(THREE, { number: 1, stripe: '#ffffff', detail });
   const p = byName(first.mesh);
   const mats = first.mesh.material;
   const body = colourMerge([
@@ -62,7 +62,7 @@ export function helmetParts() {
     { geo: p.light, color: '#fff4dd' },
   ]);
   const signs = [];
-  for (let n = 1; n <= 10; n++) signs.push(n === 1 ? p.sign : byName(buildHelmet(THREE, { number: n, stripe: '#ffffff', lowDetail: true }).mesh).sign);
+  for (let n = 1; n <= 10; n++) signs.push(n === 1 ? p.sign : byName(buildHelmet(THREE, { number: n, stripe: '#ffffff', detail }).mesh).sign);
   return {
     body,
     visor: p.visor,
@@ -82,8 +82,8 @@ const POSES = {
 
 // A glove in a still pose, as plain geometry with part colours.
 // side: -1 left, +1 right. Wrist at the origin, fingers along -Z, palm down.
-export function bakedGlove(side, pose, { lowDetail = true } = {}) {
-  const glove = buildGlove(THREE, side < 0 ? 'left' : 'right', { lowDetail });
+export function bakedGlove(side, pose, detail = 0.5) {
+  const glove = buildGlove(THREE, side < 0 ? 'left' : 'right', { detail });
   glove.setCurl(POSES[pose] || POSES.rest);
   glove.group.updateMatrixWorld(true);
   const mesh = glove.mesh;

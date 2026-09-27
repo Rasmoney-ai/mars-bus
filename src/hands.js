@@ -35,7 +35,7 @@ export class UserHands {
         this.isHand[i] = !!e.data.hand;
         const side = e.data.handedness === 'left' ? -1 : 1;
         grip.clear();
-        const glove = new THREE.Mesh(bakedGlove(side, 'rest', { lowDetail: false }), gripMat);
+        const glove = new THREE.Mesh(bakedGlove(side, 'rest', 1), gripMat);
         glove.rotation.set(-0.6, 0, side * Math.PI / 2);
         glove.position.set(0, 0, 0.05);
         glove.visible = !this.isHand[i];
