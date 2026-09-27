@@ -8,6 +8,7 @@ import { hash2, valueNoise } from './util/noise.js';
 import { MeshBuilder, compose, bakedMaterial } from './util/mesh.js';
 import { worldLight, headingVectors, sunDirection } from './terrain.js';
 import { buildLander } from './lander.js';
+import { buildMarsBase } from './marsBase.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -123,55 +124,23 @@ function buildLanderGroup(terrain) {
   return group;
 }
 
-// The base: domes, habitat tubes, a greenhouse, solar panels and an airlock
-// facing the arriving bus.
-function addBase(b, terrain, p) {
-  const y = terrain.heightAt(p.x, p.z);
-  // Local frame: +z points back towards the arriving bus.
-  const frame = compose(p.x, y, p.z, [0, p.heading, 0]);
-  const white = '#e9e6e1', stripe = '#e0772f', grey = '#8d9398', dark = '#34383d';
-  const glass = '#bfe0d6', panel = '#22315a', gold = '#c9a13b';
-  const dome = (r, x, z, color, seg = 16) =>
-    addLocal(b, frame, new THREE.SphereGeometry(r, seg, Math.max(4, seg / 2), 0, Math.PI * 2, 0, Math.PI / 2), x, 0, z, color);
-
-  dome(10, 0, 0, white);
-  addLocal(b, frame, new THREE.CylinderGeometry(10.05, 10.05, 0.6, 16), 0, 0.3, 0, stripe);
-  // Airlock towards the bus.
-  addLocal(b, frame, new THREE.BoxGeometry(5, 3.6, 7), 0, 1.8, 11.5, white);
-  addLocal(b, frame, new THREE.BoxGeometry(5.1, 0.35, 7.1), 0, 2.9, 11.5, stripe);
-  addLocal(b, frame, new THREE.BoxGeometry(2.4, 2.6, 0.2), 0, 1.3, 15.05, dark);
-  addLocal(b, frame, new THREE.BoxGeometry(0.35, 0.35, 0.2), -1.8, 2.3, 15.1, '#ffd36b', null, null, false);
-  addLocal(b, frame, new THREE.BoxGeometry(0.35, 0.35, 0.2), 1.8, 2.3, 15.1, '#ffd36b', null, null, false);
-  // Habitat tubes left and right.
-  for (const side of [-1, 1]) {
-    const x = side * 17;
-    addLocal(b, frame, new THREE.CylinderGeometry(2.8, 2.8, 14, 12), x, 2.8, side * 1.5, white, [0, 0, Math.PI / 2]);
-    addLocal(b, frame, new THREE.CylinderGeometry(2.85, 2.85, 0.5, 12), x - 4, 2.8, side * 1.5, stripe, [0, 0, Math.PI / 2]);
-    addLocal(b, frame, new THREE.SphereGeometry(2.8, 12, 6), x + side * 7, 2.8, side * 1.5, white);
-    for (let k = -1; k <= 1; k++) {
-      addLocal(b, frame, new THREE.BoxGeometry(0.9, 0.5, 0.1), x + k * 3, 3.3, side * 1.5 + 2.78, '#bfe7ff', null, null, false);
-    }
+// Marsbasen (made with Claude Design): entrance towards the arriving bus,
+// light baked from the scene's sun, ground fading into the terrain.
+function buildBaseGroup(terrain) {
+  const p = terrain.layout.base;
+  const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), p.heading);
+  const sunDir = sunDirection().applyQuaternion(q.clone().invert());
+  let r = 0, g = 0, bl = 0;
+  const c = new THREE.Color();
+  for (let k = 0; k < 12; k++) {
+    const a = (k / 12) * Math.PI * 2;
+    c.set(terrain.surfaceColor(p.x + Math.cos(a) * 62, p.z + Math.sin(a) * 62));
+    r += c.r / 12; g += c.g / 12; bl += c.b / 12;
   }
-  // Greenhouse dome with a green glow.
-  dome(7, -31, -8, glass, 12);
-  addLocal(b, frame, new THREE.SphereGeometry(5.5, 10, 4, 0, Math.PI * 2, 0, Math.PI / 2), -31, 0.05, -8, '#5c9c4a');
-  dome(5, 25, -14, white, 12);
-  // Solar field.
-  for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 5; c++) {
-      const x = 32 + c * 4.2, z = 8 + r * 4;
-      addLocal(b, frame, new THREE.BoxGeometry(0.15, 1.2, 0.15), x, 0.6, z, grey);
-      addLocal(b, frame, new THREE.BoxGeometry(3.6, 0.08, 2.2), x, 1.3, z, panel, [-0.45, 0, 0]);
-    }
-  }
-  // Antenna mast with a dish and a red light.
-  addLocal(b, frame, new THREE.CylinderGeometry(0.18, 0.25, 14, 6), -9, 7, -15, grey);
-  addLocal(b, frame, new THREE.ConeGeometry(2.2, 0.9, 12, 1, true), -9, 12.5, -15, white, [-0.9, 0.5, 0]);
-  addLocal(b, frame, new THREE.BoxGeometry(0.4, 0.4, 0.4), -9, 14.2, -15, '#ff4a3a', null, null, false);
-  // Rover garage roof and a gold fuel tank.
-  addLocal(b, frame, new THREE.BoxGeometry(9, 4, 8), 14, 2, 13, '#d9d4cc');
-  addLocal(b, frame, new THREE.BoxGeometry(6.5, 3.2, 0.2), 14, 1.6, 17.05, dark);
-  addLocal(b, frame, new THREE.CylinderGeometry(1.4, 1.4, 5, 10), -14, 1.4, 12, gold, [0, 0, Math.PI / 2]);
+  const { group } = buildMarsBase(THREE, { sunDir, groundColor: `#${c.setRGB(r, g, bl).getHexString()}` });
+  group.position.set(p.x, terrain.heightAt(p.x, p.z), p.z);
+  group.quaternion.copy(q);
+  return group;
 }
 
 // Numbered signs just after each stop, on the right of the road.
@@ -226,32 +195,12 @@ function buildStopSigns(terrain) {
   return { signs, poles };
 }
 
-function buildBaseSign(terrain, p) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 96;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#2f3a4a';
-  ctx.fillRect(0, 0, 512, 96);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 64px system-ui, sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('MARSBASEN', 256, 52);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.86), new THREE.MeshBasicMaterial({ map: tex }));
-  const y = terrain.heightAt(p.x, p.z);
-  mesh.matrix.multiplyMatrices(compose(p.x, y, p.z, [0, p.heading, 0]), compose(0, 3.35, 15.02));
-  mesh.matrixAutoUpdate = false;
-  return mesh;
-}
-
 export function buildLandmarks(terrain) {
   const L = terrain.layout;
   const group = new THREE.Group();
   group.name = 'landmarks';
   const b = new MeshBuilder(worldLight());
   L.buttes.forEach((m, i) => addButte(b, terrain, m, WORLD.seed + 10 + i));
-  addBase(b, terrain, L.base);
   const { signs, poles } = buildStopSigns(terrain);
   const mesh = new THREE.Mesh(b.build(), bakedMaterial());
   mesh.matrixAutoUpdate = false;
@@ -259,7 +208,7 @@ export function buildLandmarks(terrain) {
   const poleMesh = new THREE.Mesh(poles.build(), bakedMaterial());
   poleMesh.matrixAutoUpdate = false;
   group.add(poleMesh, signs);
-  group.add(buildBaseSign(terrain, L.base));
+  group.add(buildBaseGroup(terrain));
   group.add(buildLanderGroup(terrain));
   return group;
 }
