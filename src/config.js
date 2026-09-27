@@ -19,19 +19,15 @@ export const COMFORT = {
 };
 
 // --- Seats: 10 seats, 5 rows of 2 with a centre aisle ---------------------
-// Match these to the chairs in the classroom.
+// The seat positions (0.9 m between rows, 1.5 m across the aisle) are fixed
+// by the bus model in src/marsBus.js.
 export const SEATS = {
   count: 10,
-  rows: 5,
-  rowPitch: 0.85,           // distance between rows (front to back)
-  seatHeight: 0.42,         // top of the cushion above the bus floor
-  seatWidth: 0.48,
-  backHeight: 0.46,         // seat back above the cushion (low, so you can see out)
-  aisleWidth: 0.62,
+  seatHeight: 0.42,         // top of the cushion above the bus floor (from the model)
   // Where the head sits relative to the seat centre (forward is -z).
-  headOffsetZ: 0.08,
+  headOffsetZ: 0.02,
   // Eye height above the floor, used on desktop and for simulated passengers.
-  eyeHeight: 1.12,
+  eyeHeight: 1.08,
   // One helmet colour per seat (seat 1 first).
   colors: [
     '#e53935', '#fb8c00', '#fdd835', '#7cb342', '#00a88f',
@@ -43,18 +39,11 @@ export const SEATS = {
   ],
 };
 
-// --- Bus geometry (bus-local: x right, y up, -z forward) ------------------
+// --- Bus -------------------------------------------------------------------
 export const BUS = {
-  floorY: 1.05,             // cabin floor above the ground
-  interiorWidth: 2.3,
-  interiorHeight: 2.3,
-  frontSpace: 1.35,         // from row 1 seat centre to the front glass
-  rearSpace: 0.65,          // from row 5 seat centre to the rear wall
-  windowSill: 0.72,         // above the floor
-  windowTop: 1.85,
-  windshieldBottom: 0.62,
-  windshieldTop: 1.95,
-  wheelRadius: 0.42,
+  // Seat backs lowered to this share of the model's height, so pupils can
+  // see out ahead over the seat in front.
+  seatBackScale: 0.72,
 };
 
 // --- Timeline --------------------------------------------------------------
