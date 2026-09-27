@@ -55,7 +55,7 @@ Teksterne herunder er **udkast**. Ret dem frit, de er kun et bud på noget, der 
 ## 3. Stop: Murray Buttes og Curiosity
 
 - **Fil:** `03-murray-buttes.mp3`, ca. 30 sekunder
-- **Eleverne ser:** Bussen holder stille. Til **venstre** står de høje lagdelte klippetårne Murray Buttes. Foran dem, ca. 12 meter fra bussen, arbejder roveren Curiosity. Den er lige kørt hen til en sten og holder stille ved den. Efter ca. 15 sekunder drejer den og kører langsomt videre til en ny sten. Skærmen viser: "Curiosity og klippetårnene til venstre".
+- **Eleverne ser:** Bussen holder stille. Til **venstre** står de høje lagdelte klippetårne Murray Buttes. Foran dem, ca. 12 meter fra bussen, arbejder roveren Curiosity. Den har lige sat armen ned på en sten. Kort efter bussen er kommet, drejer den kamerahovedet og kigger på bussen. Efter ca. 10 sekunder folder den armen sammen, drejer på stedet og kører langsomt videre til en ny sten. Skærmen viser: "Curiosity og klippetårnene til venstre".
 
 > Se til venstre. De høje klipper hedder Murray Buttes. Kan I se striberne? Hvert lag er sand og mudder fra en sø for milliarder af år siden. Og dér er roveren Curiosity. Den er en robot-geolog. Den kører hen til en sten, skyder på den med en laser og borer små prøver ud, som den undersøger i sit eget lille laboratorium.
 

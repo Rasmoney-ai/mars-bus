@@ -91,7 +91,8 @@ const simulation = new PassengerSimulation(timeline, world.layout);
 const hands = new UserHands(renderer, rig);
 const clock = new LocalClock(timeline.duration);
 const sound = new Sound();
-const rover = new RoverMotion(world.rover, world.layout.rover, timeline.stops.find((st) => st.id === 'cliff').arrival, world.terrain);
+const rover = new RoverMotion(world.rover, world.layout.rover, world.layout.stop.cliff,
+  timeline.stops.find((st) => st.id === 'cliff').arrival, world.terrain);
 const narration = new Narration(timeline, sound);
 narration.setEnabled(settings.speak);
 narration.load();

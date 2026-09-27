@@ -1,34 +1,53 @@
 // The rover Curiosity at work by the Murray Buttes: it drives slowly up to a
-// rock, stops to study it, turns and drives on to the next one.
+// rock, puts its arm down on it, glances at the bus, folds the arm, turns on
+// the spot and drives on to the next rock.
 //
 // Like everything else, the rover's pose is a pure function of the ride
 // time t, so pause, seek and shared rides all show the same thing.
 // Times are relative to the bus arriving at the stop.
 
 import * as THREE from 'three';
+import { sunDirection } from './terrain.js';
 
-// Waypoints in the rover's site frame (metres; +z = the site heading, +x
-// as in the model's own axes). `t` is when the rover is there, relative to
-// the bus arrival. Between two waypoints the rover first waits `wait` s,
-// turns on the spot for `turn` s towards the next one, then drives straight
-// to it.
-export const ROVER_PLAN = [
-  { t: -40, x: 0, z: -2.4 },
-  { t: -10, x: 0, z: 0.2 },          // at rock 1 when the bus arrives
-  { t: 28, x: -2.2, z: 0.6, wait: 16, turn: 6 }, // studies rock 1, then on to rock 2
+// Where the rover is at the start, at rock 1 and at rock 2, in its site
+// frame (metres; +z = the site heading, +x as in the model's own axes).
+const POINTS = [
+  { x: 0, z: -2.4 },
+  { x: 0, z: 0.2 },
+  { x: -2.2, z: 0.6 },
 ];
-// How far in front of the rover's centre a rock it studies lies.
+// How far in front of the rover's centre the rock under its arm lies
+// (the model's arm target).
 export const ROCK_AHEAD = 2.0;
+// The rock's centre lies a little further out, so the arm rests on its
+// near side.
+const ROCK_CENTER = ROCK_AHEAD + 0.3;
 
-// The rocks the rover stops at, in the site frame.
+// The schedule (seconds relative to the bus arrival).
+const T = {
+  drive1: [-42, -12],   // start -> rock 1
+  arm1: [-10, -3],      // arm down on rock 1
+  lookBus: [0.5, 5.5],  // camera head glances at the bus
+  fold1: [6, 11],       // arm folded again
+  steerIn: [11, 12.5],  // corner wheels turned for a turn on the spot
+  turn: [12.5, 18.5],
+  steerOut: [18.5, 20],
+  drive2: [20, 34],     // rock 1 -> rock 2
+  arm2: [35, 42],       // arm down on rock 2
+};
+
+const legYaw = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
+const YAW1 = legYaw(POINTS[0], POINTS[1]);
+const YAW2 = legYaw(POINTS[1], POINTS[2]);
+const LEN1 = Math.hypot(POINTS[1].x - POINTS[0].x, POINTS[1].z - POINTS[0].z);
+const LEN2 = Math.hypot(POINTS[2].x - POINTS[1].x, POINTS[2].z - POINTS[1].z);
+
+// The rocks the rover studies, in the site frame.
 export function roverRocks() {
-  const rocks = [];
-  for (let i = 1; i < ROVER_PLAN.length; i++) {
-    const a = ROVER_PLAN[i - 1], b = ROVER_PLAN[i];
-    const yaw = Math.atan2(b.x - a.x, b.z - a.z);
-    rocks.push({ x: b.x + Math.sin(yaw) * ROCK_AHEAD, z: b.z + Math.cos(yaw) * ROCK_AHEAD });
-  }
-  return rocks;
+  return [
+    { x: POINTS[1].x + Math.sin(YAW1) * ROCK_CENTER, z: POINTS[1].z + Math.cos(YAW1) * ROCK_CENTER },
+    { x: POINTS[2].x + Math.sin(YAW2) * ROCK_CENTER, z: POINTS[2].z + Math.cos(YAW2) * ROCK_CENTER },
+  ];
 }
 
 // Site frame -> world (a rotation by the site yaw about +y).
@@ -38,58 +57,71 @@ export function siteToWorld(site, x, z) {
 }
 
 const ease = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
+const ramp = (r, [a, b]) => ease((r - a) / (b - a));
+const mix = (a, b, k) => a + (b - a) * k;
 
-function lerpAngle(a, b, k) {
-  let d = b - a;
-  while (d > Math.PI) d -= 2 * Math.PI;
-  while (d < -Math.PI) d += 2 * Math.PI;
-  return a + d * k;
-}
+// Camera head directions (radians; yaw + = towards the model's +x).
+const LOOK_AHEAD = { yaw: 0, pitch: -0.15 };
+const LOOK_ROCK = { yaw: 0.3, pitch: -0.55 };
 
 export class RoverMotion {
-  // group: the rover model; site: { x, z, yaw } in world space;
+  // rover: { group, setPose, relight, info } from curiosity.js;
+  // site: { x, z, yaw } in world space; bus: where the bus stops (world);
   // arrival: ride time when the bus arrives at the stop.
-  constructor(group, site, arrival, terrain) {
-    this.group = group;
+  constructor(rover, site, bus, arrival, terrain) {
+    this.rover = rover;
     this.site = site;
     this.arrival = arrival;
     this.terrain = terrain;
-    // Heading of each drive leg (the rover drives forwards along +z).
-    this.legs = [];
-    for (let i = 1; i < ROVER_PLAN.length; i++) {
-      const a = ROVER_PLAN[i - 1], b = ROVER_PLAN[i];
-      this.legs.push({ a, b, yaw: Math.atan2(b.x - a.x, b.z - a.z), wait: b.wait ?? 0, turn: b.turn ?? 0 });
-    }
+    this.wheelRadius = rover.info?.wheelRadius ?? 0.25;
+    // The bus as seen from the rover's site (for the camera glance).
+    let busYaw = Math.atan2(bus.x - site.x, bus.z - site.z) - (site.yaw + YAW1);
+    while (busYaw > Math.PI) busYaw -= 2 * Math.PI;
+    while (busYaw < -Math.PI) busYaw += 2 * Math.PI;
+    this.busYaw = busYaw;
     this._q = new THREE.Quaternion();
     this._up = new THREE.Vector3(0, 1, 0);
+    this._sun = new THREE.Vector3();
+    this._litYaw = null;
+    this.pose = { wheelAngle: 0, steer: 0, mastYaw: 0, mastPitch: 0, arm: 0, turnYaw: 0 };
     this.update(0);
   }
 
-  // Site-frame pose at ride time t.
+  // Site-frame position, heading and joint pose at ride time t.
   poseAt(t) {
     const r = t - this.arrival;
-    const legs = this.legs;
-    if (r <= legs[0].a.t) return { x: legs[0].a.x, z: legs[0].a.z, yaw: legs[0].yaw };
-    for (let i = 0; i < legs.length; i++) {
-      const L = legs[i];
-      if (r > L.b.t) continue;
-      const prevYaw = i > 0 ? legs[i - 1].yaw : L.yaw;
-      const turnStart = L.a.t + L.wait, driveStart = turnStart + L.turn;
-      if (r < driveStart) {
-        return { x: L.a.x, z: L.a.z, yaw: lerpAngle(prevYaw, L.yaw, ease((r - turnStart) / L.turn)) };
-      }
-      const k = ease((r - driveStart) / (L.b.t - driveStart));
-      return { x: L.a.x + (L.b.x - L.a.x) * k, z: L.a.z + (L.b.z - L.a.z) * k, yaw: L.yaw };
-    }
-    const last = legs[legs.length - 1];
-    return { x: last.b.x, z: last.b.z, yaw: last.yaw };
+    const k1 = ramp(r, T.drive1), k2 = ramp(r, T.drive2), kt = ramp(r, T.turn);
+    const x = mix(mix(POINTS[0].x, POINTS[1].x, k1), POINTS[2].x, k2);
+    const z = mix(mix(POINTS[0].z, POINTS[1].z, k1), POINTS[2].z, k2);
+    const turn = (YAW2 - YAW1) * kt;
+    const p = this.pose;
+    p.wheelAngle = (LEN1 * k1 + LEN2 * k2) / this.wheelRadius;
+    p.turnYaw = turn;
+    p.steer = ramp(r, T.steerIn) * (1 - ramp(r, T.steerOut));
+    p.arm = ramp(r, T.arm1) * (1 - ramp(r, T.fold1)) + ramp(r, T.arm2);
+
+    // Camera head: ahead while driving, at the rock while the arm works,
+    // a short glance at the bus.
+    const atRock = Math.max(ramp(r, [-12, -10]) * (1 - ramp(r, [10, 12])), ramp(r, [34, 36]));
+    const bus = ramp(r, [T.lookBus[0], T.lookBus[0] + 1.5]) * (1 - ramp(r, [T.lookBus[1] - 1.5, T.lookBus[1]]));
+    p.mastYaw = mix(mix(LOOK_AHEAD.yaw, LOOK_ROCK.yaw, atRock), this.busYaw, bus);
+    p.mastPitch = mix(mix(LOOK_AHEAD.pitch, LOOK_ROCK.pitch, atRock), -0.05, bus);
+    return { x, z, yaw: YAW1 + turn };
   }
 
   update(t) {
     const p = this.poseAt(t);
     const s = this.site;
     const { x, z } = siteToWorld(s, p.x, p.z);
-    this.group.position.set(x, this.terrain.heightAt(x, z), z);
-    this.group.quaternion.copy(this._q.setFromAxisAngle(this._up, s.yaw + p.yaw));
+    const g = this.rover.group;
+    g.position.set(x, this.terrain.heightAt(x, z), z);
+    const yaw = s.yaw + p.yaw;
+    g.quaternion.copy(this._q.setFromAxisAngle(this._up, yaw));
+    this.rover.setPose(this.pose);
+    // Re-bake the light when the rover has turned noticeably.
+    if (this._litYaw === null || Math.abs(yaw - this._litYaw) > 0.08) {
+      this._litYaw = yaw;
+      this.rover.relight(this._sun.copy(sunDirection()).applyQuaternion(this._q.clone().invert()));
+    }
   }
 }

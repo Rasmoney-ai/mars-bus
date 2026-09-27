@@ -148,7 +148,7 @@ function buildLanderGroup(terrain) {
 }
 
 // The rover Curiosity (made with Claude Design) at the Murray Buttes. It is
-// moved by rover.js; the light is baked for the site heading.
+// moved and posed by rover.js.
 function buildRoverGroup(terrain) {
   const p = terrain.layout.rover;
   const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), p.yaw);
@@ -160,10 +160,10 @@ function buildRoverGroup(terrain) {
     c.set(terrain.surfaceColor(p.x + Math.cos(a) * 3, p.z + Math.sin(a) * 3));
     r += c.r / 8; g += c.g / 8; b += c.b / 8;
   }
-  const { group } = buildCuriosity(THREE, { sunDir, groundColor: `#${c.setRGB(r, g, b).getHexString()}` });
-  group.position.set(p.x, terrain.heightAt(p.x, p.z), p.z);
-  group.quaternion.copy(q);
-  return group;
+  const rover = buildCuriosity(THREE, { sunDir, groundColor: `#${c.setRGB(r, g, b).getHexString()}` });
+  rover.group.position.set(p.x, terrain.heightAt(p.x, p.z), p.z);
+  rover.group.quaternion.copy(q);
+  return rover;
 }
 
 // Marsbasen (made with Claude Design): entrance towards the arriving bus,
@@ -252,6 +252,8 @@ export function buildLandmarks(terrain) {
   group.add(poleMesh, signs);
   group.add(buildBaseGroup(terrain));
   group.add(buildLanderGroup(terrain));
-  group.add(buildRoverGroup(terrain));
+  const rover = buildRoverGroup(terrain);
+  group.add(rover.group);
+  group.userData.rover = rover;
   return group;
 }
