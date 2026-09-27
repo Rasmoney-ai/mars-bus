@@ -1,4 +1,5 @@
-// Landmarks along the route: the lander at the start (lander.js), a group of buttes,
+// Landmarks along the route: the lander at the start (lander.js), a group of buttes
+// with the rover Curiosity (curiosity.js),
 // the base at the end and small numbered signs at the stops.
 // All low-poly, built in code, with baked lighting (see terrain.js).
 
@@ -9,6 +10,7 @@ import { MeshBuilder, compose, bakedMaterial } from './util/mesh.js';
 import { worldLight, headingVectors, sunDirection } from './terrain.js';
 import { buildLander } from './lander.js';
 import { buildMarsBase } from './marsBase.js';
+import { buildCuriosity } from './curiosity.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -145,6 +147,27 @@ function buildLanderGroup(terrain) {
   return group;
 }
 
+// The rover Curiosity (made with Claude Design), parked at the Murray Buttes
+// with its mast and arm turned a little past the bus, so it is seen at an angle.
+function buildRoverGroup(terrain) {
+  const L = terrain.layout;
+  const p = L.rover, bus = L.stop.cliff;
+  const yaw = Math.atan2(bus.x - p.x, bus.z - p.z) + 0.6;
+  const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+  const sunDir = sunDirection().applyQuaternion(q.clone().invert());
+  let r = 0, g = 0, b = 0;
+  const c = new THREE.Color();
+  for (let k = 0; k < 8; k++) {
+    const a = (k / 8) * Math.PI * 2;
+    c.set(terrain.surfaceColor(p.x + Math.cos(a) * 3, p.z + Math.sin(a) * 3));
+    r += c.r / 8; g += c.g / 8; b += c.b / 8;
+  }
+  const { group } = buildCuriosity(THREE, { sunDir, groundColor: `#${c.setRGB(r, g, b).getHexString()}` });
+  group.position.set(p.x, terrain.heightAt(p.x, p.z), p.z);
+  group.quaternion.copy(q);
+  return group;
+}
+
 // Marsbasen (made with Claude Design): entrance towards the arriving bus,
 // light baked from the scene's sun, ground fading into the terrain.
 function buildBaseGroup(terrain) {
@@ -231,5 +254,6 @@ export function buildLandmarks(terrain) {
   group.add(poleMesh, signs);
   group.add(buildBaseGroup(terrain));
   group.add(buildLanderGroup(terrain));
+  group.add(buildRoverGroup(terrain));
   return group;
 }

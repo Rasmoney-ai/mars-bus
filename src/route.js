@@ -27,9 +27,10 @@ export const ROUTE = [
   { straight: 38 },
   {
     stop: {
-      id: 'cliff', name: 'Klippetårnene', look: 'left',
-      text: 'Se de lagdelte klipper til venstre',
-      speakOnWay: '02-mod-klippetaarnene', speak: '03-klippetaarnene',
+      id: 'cliff', name: 'Murray Buttes', look: 'left',
+      text: 'Curiosity og klippetårnene til venstre',
+      hold: 30,
+      speakOnWay: '02-mod-murray-buttes', speak: '03-murray-buttes',
     },
   },
   { straight: 25 },
