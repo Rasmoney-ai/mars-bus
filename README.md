@@ -70,6 +70,8 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `src/marsBus.js` | busmodellen "R-10", lavet med Claude Design (sæder, vinduer, instrumentbræt, hjul) |
 | `src/bus.js` | sætter modellen ind i turen: sædepladser, levende kort, infoskærm og hjul |
 | `src/terrain.js`, `src/landmarks.js` | Mars-landskab, vej, sten, himmel og landemærker |
+| `src/lander.js` | landingsmodulet LM-03, lavet med Claude Design |
+| `src/marsBase.js` | Marsbasen, lavet med Claude Design |
 | `src/suitGear.js` | hjelm og handsker, lavet med Claude Design |
 | `src/suit.js` | gør hjelm og handsker lette nok til brillen |
 | `src/passengers.js` | tegner passagerer (hjelm og handsker) ud fra data |

@@ -62,7 +62,8 @@ export function computeLayout(path) {
   ];
   const mesa = buttes[0];
   const lander = { ...at('landing', -4, -24) };
-  const base = { ...at('base', 42, -4) };
+  // Base origin 28.9 m ahead of the stop: the bus front then sits 15 m from the door.
+  const base = { ...at('base', 28.9, 0) };
   // A big hazy mountain on the horizon, north-west of the route.
   const mountain = { x: center.x - 900, z: center.z - 1250, radius: 520, height: 330 };
 
@@ -75,7 +76,7 @@ export function makeNaturalHeight(layout) {
   const { center, crater, dunes, lander, base, mountain, buttes } = layout;
   const flats = [
     { x: lander.x, z: lander.z, r0: 18, r1: 45 },
-    { x: base.x, z: base.z, r0: 55, r1: 95 },
+    { x: base.x, z: base.z, r0: 72, r1: 115 },
     ...buttes.map((b) => ({ x: b.x, z: b.z, r0: b.radius * 1.6, r1: b.radius * 2.8 })),
   ];
   const hills = (x, z) => {
@@ -195,6 +196,14 @@ export class Terrain {
     this.road = new RoadIndex(path);
     this.flatRadius = 5.5;
     this.blendRadius = 16;
+    // The base stands on a level pad (its own baked ground, 132 x 122 m),
+    // at the road's height where the bus stops.
+    const base = this.layout.base;
+    const baseStop = path.stops[path.stops.length - 1];
+    this.pad = {
+      x: base.x, z: base.z, c: Math.cos(base.heading), s: Math.sin(base.heading),
+      hx: 68, hz: 63, blend: 25, level: path.heightAt(baseStop.s) - 0.06,
+    };
 
     const L = this.layout;
     const margin = 260;
@@ -212,11 +221,19 @@ export class Terrain {
 
   // Natural terrain blended into the smoothed road near the route.
   gradedHeight(x, z, tmp = {}) {
-    const h = this.natural(x, z);
+    let h = this.natural(x, z);
     const r = this.road.nearest(x, z, tmp);
-    if (r.d >= this.blendRadius) return h;
-    const roadY = this.path.heightAt(r.s) - 0.06;
-    return lerp(roadY, h, smoothstep(this.flatRadius, this.blendRadius, r.d));
+    if (r.d < this.blendRadius) {
+      const roadY = this.path.heightAt(r.s) - 0.06;
+      h = lerp(roadY, h, smoothstep(this.flatRadius, this.blendRadius, r.d));
+    }
+    // Level pad under the base.
+    const P = this.pad;
+    const dx = x - P.x, dz = z - P.z;
+    const lx = Math.abs(P.c * dx - P.s * dz) - P.hx, lz = Math.abs(P.s * dx + P.c * dz) - P.hz;
+    const out = Math.hypot(Math.max(lx, 0), Math.max(lz, 0));
+    if (out < P.blend) h = lerp(P.level, h, smoothstep(0, P.blend, out));
+    return h;
   }
 
   // Height of the actual terrain mesh at (x, z).
@@ -234,6 +251,16 @@ export class Terrain {
     }
     if (fx + fz <= 1) return h00 + (h10 - h00) * fx + (h01 - h00) * fz;
     return h11 + (h01 - h11) * (1 - fx) + (h10 - h11) * (1 - fz);
+  }
+
+  // The colour the flat ground shows on screen at (x, z), as an sRGB hex
+  // string (baked light and the average of the detail texture included).
+  // Used so the lander's ground shadow fades exactly into the terrain.
+  surfaceColor(x, z) {
+    const c = this.groundColor(x, z, this.heightAt(x, z), 1, new THREE.Color());
+    c.multiplyScalar(shadeFactor(new THREE.Vector3(0, 1, 0), worldLight()) * 1.1);
+    c.r *= 0.86; c.g *= 0.86 * 0.97; c.b *= 0.86 * 0.95;
+    return `#${c.getHexString()}`;
   }
 
   distanceToRoad(x, z) {
@@ -256,9 +283,6 @@ export class Terrain {
     // Lighter dust on the crater floor.
     const rc = Math.hypot(x - L.crater.x, z - L.crater.z) / L.crater.radius;
     if (rc < 0.8) out.lerp(COLORS.craterFloor, (1 - smoothstep(0.35, 0.75, rc)) * 0.6);
-    // Scorched ground around the lander.
-    const dl = Math.hypot(x - L.lander.x, z - L.lander.z);
-    if (dl < 20) out.lerp(COLORS.scorch, (1 - smoothstep(4, 18, dl)) * 0.75);
     // Tiny per-triangle variation for the low-poly look.
     out.multiplyScalar(0.94 + 0.12 * hash2(Math.floor(x * 3.1), Math.floor(z * 3.7), seed + 5));
     return out;
@@ -334,7 +358,6 @@ const COLORS = {
   slope: new THREE.Color('#6e3320'),
   dune: new THREE.Color('#4a3833'),
   craterFloor: new THREE.Color('#c58a62'),
-  scorch: new THREE.Color('#3b2620'),
   rockA: new THREE.Color('#5a2f20'),
   rockB: new THREE.Color('#8a4c31'),
 };
@@ -480,7 +503,7 @@ function buildRocks(terrain) {
 
   const blocked = (x, z, r) => {
     if (terrain.distanceToRoad(x, z) < 6.5 + r) return true;
-    if (Math.hypot(x - L.base.x, z - L.base.z) < 70) return true;
+    if (Math.hypot(x - L.base.x, z - L.base.z) < 85) return true;
     if (Math.hypot(x - L.lander.x, z - L.lander.z) < 16) return true;
     for (const b of L.buttes) if (Math.hypot(x - b.x, z - b.z) < b.radius * 1.9) return true;
     const dd = Math.hypot(x - L.dunes.x, z - L.dunes.z) / L.dunes.radius;
