@@ -51,11 +51,16 @@ export function computeLayout(path) {
 
   const crater = { ...at('crater', 4, -58), radius: 55, depth: 16, rim: 2.5 };
   const dunes = { ...at('dunes', 10, 110), radius: 95, wavelength: 34, amp: 3.2, windDir: stop.dunes.heading + 1.1 };
-  const mesa = { ...at('cliff', 12, 78), radius: 36, height: 44 };
+  // A group of buttes like the Murray Buttes in Gale crater; the first is
+  // the one passengers point at from the stop.
   const buttes = [
-    { ...at('cliff', 75, 95), radius: 16, height: 26 },
-    { ...at('cliff', -45, 115), radius: 12, height: 19 },
+    { ...at('cliff', 8, 60), radius: 13, height: 21, stretch: 0.25, angle: 0.4 },
+    { ...at('cliff', 48, 82), radius: 9, height: 15, stretch: 0.15, angle: 1.3 },
+    { ...at('cliff', -30, 86), radius: 11, height: 17, stretch: 0.3, angle: 2.2 },
+    { ...at('cliff', 78, 58), radius: 6, height: 10, stretch: 0.1, angle: 0.9 },
+    { ...at('cliff', -62, 64), radius: 5, height: 8, stretch: 0.2, angle: 2.8 },
   ];
+  const mesa = buttes[0];
   const lander = { ...at('landing', -4, -24) };
   const base = { ...at('base', 42, -4) };
   // A big hazy mountain on the horizon, north-west of the route.
@@ -67,11 +72,11 @@ export function computeLayout(path) {
 // Natural terrain height (before the road is graded in).
 export function makeNaturalHeight(layout) {
   const seed = WORLD.seed;
-  const { center, crater, dunes, lander, base, mountain, mesa } = layout;
+  const { center, crater, dunes, lander, base, mountain, buttes } = layout;
   const flats = [
     { x: lander.x, z: lander.z, r0: 18, r1: 45 },
     { x: base.x, z: base.z, r0: 55, r1: 95 },
-    { x: mesa.x, z: mesa.z, r0: mesa.radius * 0.8, r1: mesa.radius * 1.6 },
+    ...buttes.map((b) => ({ x: b.x, z: b.z, r0: b.radius * 1.6, r1: b.radius * 2.8 })),
   ];
   const hills = (x, z) => {
     let h = fbm(x / 170, z / 170, 4, seed) * 6.5;
@@ -477,8 +482,7 @@ function buildRocks(terrain) {
     if (terrain.distanceToRoad(x, z) < 6.5 + r) return true;
     if (Math.hypot(x - L.base.x, z - L.base.z) < 70) return true;
     if (Math.hypot(x - L.lander.x, z - L.lander.z) < 16) return true;
-    if (Math.hypot(x - L.mesa.x, z - L.mesa.z) < L.mesa.radius * 0.85) return true;
-    for (const b of L.buttes) if (Math.hypot(x - b.x, z - b.z) < b.radius * 0.85) return true;
+    for (const b of L.buttes) if (Math.hypot(x - b.x, z - b.z) < b.radius * 1.9) return true;
     const dd = Math.hypot(x - L.dunes.x, z - L.dunes.z) / L.dunes.radius;
     if (dd < 0.8 && rng() < 0.85) return true;
     return false;
@@ -517,12 +521,12 @@ function buildRocks(terrain) {
     const z = L.center.z + (rng() - 0.5) * (L.halfZ * 2 + 500);
     place(x, z, 1 + rng() * 3.5);
   }
-  // Rubble around the foot of the mesa and buttes.
-  for (const b of [L.mesa, ...L.buttes]) {
-    const count = Math.round(b.radius * 5);
+  // Boulders that have rolled off the buttes, just beyond the scree.
+  for (const b of L.buttes) {
+    const count = Math.round(b.radius * 6);
     for (let i = 0; i < count; i++) {
       const a = rng() * Math.PI * 2;
-      const d = b.radius * (0.9 + rng() * 0.5);
+      const d = b.radius * (1.95 + Math.pow(rng(), 2) * 1.2);
       place(b.x + Math.cos(a) * d, b.z + Math.sin(a) * d, 0.4 + Math.pow(rng(), 2) * 2.8, 0.7);
     }
   }

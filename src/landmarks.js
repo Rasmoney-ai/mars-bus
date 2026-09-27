@@ -1,66 +1,82 @@
-// Landmarks along the route: the lander at the start, a layered mesa,
+// Landmarks along the route: the lander at the start, a group of buttes,
 // the base at the end and small numbered signs at the stops.
 // All low-poly, built in code, with baked lighting (see terrain.js).
 
 import * as THREE from 'three';
 import { WORLD } from './config.js';
-import { hash2, mulberry32 } from './util/noise.js';
+import { hash2, valueNoise } from './util/noise.js';
 import { MeshBuilder, compose, bakedMaterial } from './util/mesh.js';
 import { worldLight, headingVectors } from './terrain.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
-// Layered mesa: stacked, slightly tapered rings in alternating strata colours.
-function addMesa(b, terrain, m, seed) {
-  const K = 18;
-  const rng = mulberry32(seed);
-  const radii = [];
-  for (let k = 0; k < K; k++) radii.push(m.radius * (0.78 + 0.32 * rng()));
-  let minY = Infinity;
+// A butte like the Murray Buttes in Gale crater (Curiosity drove between
+// them): a dark, hard caprock that overhangs a little, steep cliffs of thin
+// pale layers, and a wide apron of scree around the foot. Irregular outline
+// with gullies, so no two buttes look alike.
+const BUTTE_PROFILE = [
+  // [radius factor, height factor, part]
+  [2.05, 0, 'talus'], [1.72, 0.09, 'talus'], [1.45, 0.2, 'talus'], [1.24, 0.31, 'talus'],
+  [1.12, 0.37, 'cliff'], [1.07, 0.52, 'cliff'], [1.03, 0.66, 'cliff'], [1.0, 0.8, 'cliff'],
+  [1.09, 0.83, 'cap'], [1.09, 0.94, 'cap'], [1.01, 1.0, 'cap'],
+];
+const BUTTE_COLORS = {
+  talusA: new THREE.Color('#8a4b2f'), talusB: new THREE.Color('#a8663f'),
+  layerA: new THREE.Color('#b87c56'), layerB: new THREE.Color('#d2a178'), layerDark: new THREE.Color('#99593a'),
+  cap: new THREE.Color('#5c3c2e'), capTop: new THREE.Color('#6d4a38'),
+};
+
+function addButte(b, terrain, m, seed) {
+  const K = 44;
+  const rows = BUTTE_PROFILE.length;
+  const outline = [];
   for (let k = 0; k < K; k++) {
-    const a = (k / K) * Math.PI * 2;
-    minY = Math.min(minY, terrain.heightAt(m.x + Math.cos(a) * radii[k], m.z + Math.sin(a) * radii[k]));
+    const t = (k / K) * Math.PI * 2;
+    let r = 1 + 0.16 * valueNoise(Math.cos(t) * 1.3 + seed, Math.sin(t) * 1.3, seed) + 0.07 * valueNoise(Math.cos(t) * 4, Math.sin(t) * 4 + seed, seed + 1);
+    r -= 0.17 * Math.pow(Math.max(0, Math.cos(t * 5 + seed)), 14); // gullies
+    outline.push(r * (m.stretch ? 1 + m.stretch * Math.cos(2 * (t - m.angle)) : 1));
   }
-  const strata = ['#9a5235', '#c07d55', '#874630', '#b8744c', '#a45e3d', '#d09068'].map((c) => new THREE.Color(c));
-  const ledge = new THREE.Color('#c98d63');
-  const layers = 5;
-  let y = minY - 3;
-  let scale = 1;
-  const center = V(m.x, 0, m.z);
-  const ring = (sc, yy, jitter) => {
-    const pts = [];
+  const base = terrain.heightAt(m.x, m.z) - 0.5;
+  const grid = [];
+  for (let i = 0; i < rows; i++) {
+    const [rf, hf, part] = BUTTE_PROFILE[i];
+    const ring = [];
     for (let k = 0; k < K; k++) {
-      const a = (k / K) * Math.PI * 2;
-      const r = radii[k] * sc * (1 + (jitter ? (hash2(k, jitter, seed) - 0.5) * 0.08 : 0));
-      pts.push(V(m.x + Math.cos(a) * r, yy, m.z + Math.sin(a) * r));
+      const t = (k / K) * Math.PI * 2;
+      const jit = part === 'talus' ? 0.1 : 0.03;
+      const r = m.radius * rf * outline[k] * (1 + (hash2(k, i, seed) - 0.5) * jit);
+      const x = m.x + Math.cos(t) * r, z = m.z + Math.sin(t) * r;
+      let y = base + hf * m.height + (hash2(k, i + 50, seed) - 0.5) * (part === 'talus' ? 0.8 : 0.25);
+      if (i === 0) y = terrain.heightAt(x, z) - 0.25;
+      ring.push(V(x, y, z));
     }
-    return pts;
-  };
-  let bottom = ring(scale, y, 0);
-  for (let l = 0; l < layers; l++) {
-    const h = (m.height / layers) * (0.75 + 0.5 * rng()) + (l === 0 ? 3 : 0);
-    const topScale = scale * 0.975;
-    const top = ring(topScale, y + h, l + 1);
+    grid.push(ring);
+  }
+  const center = V(m.x, 0, m.z);
+  const c = new THREE.Color();
+  for (let i = 0; i < rows - 1; i++) {
+    const part = BUTTE_PROFILE[i + 1][2];
     for (let k = 0; k < K; k++) {
       const k2 = (k + 1) % K;
-      wallQuad(b, bottom[k], bottom[k2], top[k2], top[k], strata[(l * 2 + (k % 2)) % strata.length], center);
-    }
-    y += h;
-    scale = topScale;
-    if (l < layers - 1) {
-      const innerScale = scale * (0.93 + 0.04 * rng());
-      const inner = ring(innerScale, y, l + 11);
-      for (let k = 0; k < K; k++) {
-        const k2 = (k + 1) % K;
-        flatQuad(b, top[k], top[k2], inner[k2], inner[k], ledge);
+      const p0 = grid[i][k], p1 = grid[i][k2], p2 = grid[i + 1][k2], p3 = grid[i + 1][k];
+      const y = (p0.y + p2.y) / 2 - base;
+      if (part === 'talus') {
+        c.copy(BUTTE_COLORS.talusA).lerp(BUTTE_COLORS.talusB, hash2(k, i, seed + 3));
+      } else if (part === 'cliff') {
+        const band = Math.sin(y * 4.1 + seed) * 0.5 + 0.5;
+        c.copy(BUTTE_COLORS.layerA).lerp(BUTTE_COLORS.layerB, band * 0.8);
+        if (Math.sin(y * 1.3 + seed * 0.7) > 0.8) c.lerp(BUTTE_COLORS.layerDark, 0.6);
+        c.multiplyScalar(0.95 + 0.1 * hash2(k, i, seed + 4));
+      } else {
+        c.copy(BUTTE_COLORS.cap).multiplyScalar(0.92 + 0.16 * hash2(k, i, seed + 5));
       }
-      bottom = inner;
-      scale = innerScale;
-    } else {
-      const c = V(m.x, y, m.z);
-      for (let k = 0; k < K; k++) flatTri(b, top[k], top[(k + 1) % K], c, ledge);
+      wallQuad(b, p0, p1, p2, p3, c, center);
     }
   }
+  // Flat, slightly uneven top of the caprock.
+  const top = grid[rows - 1];
+  const mid = V(m.x, base + m.height + 0.3, m.z);
+  for (let k = 0; k < K; k++) flatTri(b, top[k], top[(k + 1) % K], mid, BUTTE_COLORS.capTop);
 }
 
 // A wall quad facing outwards from `center` (in the xz plane).
@@ -247,8 +263,7 @@ export function buildLandmarks(terrain) {
   const group = new THREE.Group();
   group.name = 'landmarks';
   const b = new MeshBuilder(worldLight());
-  addMesa(b, terrain, L.mesa, WORLD.seed + 3);
-  L.buttes.forEach((m, i) => addMesa(b, terrain, m, WORLD.seed + 10 + i));
+  L.buttes.forEach((m, i) => addButte(b, terrain, m, WORLD.seed + 10 + i));
   addLander(b, terrain, L.lander);
   addBase(b, terrain, L.base);
   const { signs, poles } = buildStopSigns(terrain);
