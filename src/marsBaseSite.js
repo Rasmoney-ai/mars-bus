@@ -1,6 +1,9 @@
-// Marsbasen — destination for Mars-bus R-10. three.js, WebXR / Meta Quest 3.
-//   import { buildMarsBase } from './marsBase.js';
-//   const { group } = buildMarsBase(THREE, { sunDir, groundColor });
+// Marsbasen, byggeplads-udgave ("uløst") — for Mars-bus R-10. three.js, WebXR / Meta Quest 3.
+//   import { buildMarsBaseSite } from './marsBaseSite.js';
+//   const { group } = buildMarsBaseSite(THREE, { sunDir, groundColor });
+// Same footprint, entrance and bus zone as marsBase.js, but the Mars problems are NOT solved:
+// no radiation shielding (modules sit bare on the surface), no greenhouse, no power plant or solar
+// fields, no water / O2 / CH4 production. Only temporary battery crates power the comms gear.
 // 1 unit = 1 m, y-up, origin at ground level in the middle of the base.
 // Entrance faces +Z (door at z = 10). Clear zone for the bus: x −6…6, z 20…60.
 // Light and shadow are baked into vertex colours from sunDir (model space).
@@ -87,51 +90,24 @@ function textures(THREE) {
     g.fillStyle = '#b5b5b1'; g.fillRect(0, 0, 512, 4); g.fillRect(0, 0, 4, 512); g.fillRect(254, 0, 4, 512); g.fillRect(0, 254, 512, 4);
     g.fillStyle = '#cfcfcb'; for (let y = 10; y < 512; y += 20) { [7, 261].forEach(x => { g.beginPath(); g.arc(x, y, 2, 0, 7); g.fill(); }); }
   }, true);
-  const sand = mk(512, 512, (g) => {
-    g.fillStyle = '#8c5234'; g.fillRect(0, 0, 512, 512);
-    for (let r = 0; r < 8; r++) for (let c = -1; c < 5; c++) {
-      const x = c * 128 + (r % 2) * 64 + (rnd() - 0.5) * 10, y = r * 64 + (rnd() - 0.5) * 4, base = 168 + rnd() * 26;
-      const gr = g.createRadialGradient(x + 64, y + 22, 8, x + 64, y + 34, 74);
-      gr.addColorStop(0, `rgb(${base + 26},${base * 0.66 + 22},${base * 0.47 + 12})`); gr.addColorStop(1, `rgb(${base - 30},${base * 0.5 - 8},${base * 0.34 - 6})`);
-      g.fillStyle = gr; g.beginPath(); g.ellipse(x + 64, y + 33, 66, 34, (rnd() - 0.5) * 0.06, 0, 7); g.fill();
-      g.strokeStyle = 'rgba(90,50,30,0.25)'; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 14, y + 36); g.quadraticCurveTo(x + 64, y + 30 + rnd() * 10, x + 114, y + 36); g.stroke();
-    }
-    for (let k = 0; k < 2500; k++) { g.fillStyle = `rgba(${rnd() > 0.5 ? '200,130,90' : '90,50,30'},0.25)`; g.fillRect(rnd() * 512, rnd() * 512, 2, 2); }
-  }, true);
   const fabric = mk(512, 512, (g) => {
     g.fillStyle = '#f4f3ee'; g.fillRect(0, 0, 512, 512);
     for (let k = 0; k < 300; k++) { g.strokeStyle = `rgba(0,0,0,${0.02 + rnd() * 0.03})`; g.lineWidth = 2 + rnd() * 4; g.beginPath(); const x = rnd() * 512, y = rnd() * 512; g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 30, y + 40 + rnd() * 60); g.stroke(); }
     g.fillStyle = '#c8c6bf'; g.fillRect(0, 0, 8, 512); g.fillStyle = '#dcd9d2'; g.fillRect(0, 250, 512, 12);
   }, true);
-  const green = mk(512, 256, (g) => {
-    const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#ffe0a0'); gr.addColorStop(0.45, '#e9a35c'); gr.addColorStop(1, '#5a3a22');
-    g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
-    g.fillStyle = 'rgba(255,240,200,0.9)'; g.fillRect(20, 26, 472, 6); g.fillRect(20, 110, 472, 5);
-    [[70, 22], [150, 18], [226, 16]].forEach(([y, s], row) => {
-      g.fillStyle = '#5b4632'; g.fillRect(14, y + s, 484, 7);
-      for (let x = 24; x < 490; x += s * 0.9) {
-        const c = ['#3f8f3a', '#5fb04a', '#2d6b2e', '#79c25a'][(rnd() * 4) | 0];
-        g.fillStyle = c; g.beginPath(); g.ellipse(x + rnd() * 6, y + s * 0.3 + rnd() * 5, s * (0.55 + rnd() * 0.3), s * (0.7 + rnd() * 0.4), 0, 0, 7); g.fill();
-        if (row === 0 && rnd() > 0.7) { g.fillStyle = '#e04a3a'; g.beginPath(); g.arc(x + 4, y + 8, 3, 0, 7); g.fill(); }
-      }
-    });
-    g.fillStyle = '#5a5e62'; g.fillRect(0, 0, 512, 10); g.fillRect(0, 0, 10, 256); g.fillRect(250, 0, 8, 256); g.fillRect(0, 128, 512, 5);
-  }, true);
-  return (_tex = { atlas, panels, sand, fabric, green });
+  return (_tex = { atlas, panels, fabric });
 }
 
-export function buildMarsBase(THREE, { sunDir = new THREE.Vector3(0.4, 0.72, 0.56), groundColor = '#9a4f32' } = {}) {
+export function buildMarsBaseSite(THREE, { sunDir = new THREE.Vector3(0.4, 0.72, 0.56), groundColor = '#9a4f32' } = {}) {
   const T = textures(THREE);
   if (!_mats) {
     const basic = (name, o) => new THREE.MeshBasicMaterial({ name, vertexColors: true, toneMapped: false, ...o });
     _mats = {
-      plain: basic('base_plain', { side: THREE.DoubleSide }),
-      atlas: basic('base_atlas', { map: T.atlas, side: THREE.DoubleSide }),
-      panels: basic('base_panels', { map: T.panels }),
-      sand: basic('base_sandbags', { map: T.sand }),
-      fabric: basic('base_fabric', { map: T.fabric }),
-      green: basic('base_greenhouse', { map: T.green, side: THREE.DoubleSide }),
-      ground: basic('base_ground', { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+      plain: basic('site_plain', { side: THREE.DoubleSide }),
+      atlas: basic('site_atlas', { map: T.atlas, side: THREE.DoubleSide }),
+      panels: basic('site_panels', { map: T.panels }),
+      fabric: basic('site_fabric', { map: T.fabric }),
+      ground: basic('site_ground', { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     };
   }
   const s = sunDir.clone().normalize();
@@ -179,7 +155,7 @@ export function buildMarsBase(THREE, { sunDir = new THREE.Vector3(0.4, 0.72, 0.5
     return [0, 1, 2].map(i => alb[i] * (amb * C.sky[i] + bnc * C.bounce[i] + sun * C.sun[i]));
   }
 
-  const B = { plain: [], atlas: [], panels: [], sand: [], fabric: [], green: [], ground: [] };
+  const B = { plain: [], atlas: [], panels: [], fabric: [], ground: [] };
   const _p = V3(0, 0, 0), _n = V3(0, 0, 0);
   function add(mat, geo, tint, o = {}) {
     const g = geo.index ? geo.toNonIndexed() : geo;
@@ -221,16 +197,12 @@ export function buildMarsBase(THREE, { sunDir = new THREE.Vector3(0.4, 0.72, 0.5
 
   // =============== register occluders first (ids used as `self`) ===============
   const oVest = box(-3, 0, 4, 3, 4.4, 10), oSign = box(-2.6, 4.8, 8.9, 2.6, 6.0, 9.1);
-  const oHab = box(-13.5, 0, -8.5, 13.5, 4.6, 2.6);
+  const oHab = box(-14.2, 0.3, -3.6, 14.2, 5.5, 1.6), oLink = box(-1.5, 0.9, 1.0, 1.5, 3.6, 4.05);
   const oDomeA = sph(-27, -2, -8, 9), oDomeB = sph(27, -1.5, -12, 8);
-  const oGH = box(-22, 0, 4, -12, 3.3, 16), oGar = box(11, 0, 0, 25, 7.8, 14), oBerm = box(25, 0, 0, 27.6, 3.4, 14);
-  const oTH = box(30, 0, 2.6, 40.4, 3.3, 14.4), oTV = box(42.2, 0, -3.8, 45.8, 8.8, 5.3);
-  const oCont = box(-44, 0, -2, -30, 5.2, 10.2), oDish = sph(-7, 5.2, -16.5, 2.6), oRB = box(28, 0, -38, 52, 2.4, -35);
+  const oGar = box(11, 0, 0, 25, 7.3, 14);
+  const oCont = box(-44, 0, -2, -30, 5.2, 10.2), oDish = sph(-7, 5.2, -16.5, 2.6);
   const oRover = box(15.8, 0, 16.3, 17.8, 2.2, 20.7);
-  const rows = [];
-  [-42, -37, -32, -27, -22].forEach(z => rows.push({ x0: -53, x1: -31, z }));
-  [-24, -18].forEach(z => rows.push({ x0: 29, x1: 51, z }));
-  rows.forEach(r => r.occ = box(r.x0, 0.35, r.z - 0.9, r.x1, 1.9, r.z + 0.9));
+  const oCrane = box(33.6, 0, 11.6, 38.6, 2.7, 14.6), oStack = box(-23.5, 0, 5, -13, 1.6, 14.5), oBatt = box(0.4, 0, -15.3, 4.6, 1.1, -13.7);
 
   // =============== ENTRANCE (airlock hub) ===============
   add('panels', BB(-3, 0, 4, 3, 4.2, 10), C.white, { tile: 0.25, self: oVest });
@@ -260,53 +232,53 @@ export function buildMarsBase(THREE, { sunDir = new THREE.Vector3(0.4, 0.72, 0.5
     add('plain', BB(x - 0.2, 4.1, z - 0.15, x + 0.2, 4.15, z + 0.15), C.lamp, { emit: true });
   });
 
-  // =============== MAIN HABITAT (regolith-covered, half-buried) ===============
-  add('sand', archX(-3, 7, 5.5, -9, 9), C.full, { tile: 0.42, self: oHab });
-  [-1, 1].forEach(sg => add('sand', xf(new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), [sg * 9, 0, -3], [0, 0, 0], [6, 5.5, 7]), C.full, { tile: 0.42, self: oHab }));
-  [[-6.5, 3.92], [6.5, 3.92], [-11.2, 3.3], [11.2, 3.3]].forEach(([x, z]) => {
-    add('plain', BB(x - 0.8, 0.9, z - 0.6, x + 0.8, 2.3, z + 0.7), C.grey, { self: oHab });
-    add('plain', BB(x - 0.9, 2.3, z - 0.6, x + 0.9, 2.42, z + 0.85), C.orange, { self: oHab });
-    add('atlas', plane(1.2, 1.0, R.win, [x, 1.6, z + 0.71]), C.full, { emit: true });
-  });
-  [[-4, -3, 1.3], [5, -5, 1.0], [-7, -6, 0.9]].forEach(([x, z, h]) => {
-    const y = 5.5 * Math.pow(Math.sin(Math.acos((z + 3) / 7)), 0.7) - 0.2;
-    add('plain', tube(V3(x, y, z), V3(x, y + h, z), 0.3, 10, false), C.silver);
-    add('plain', xf(new THREE.CylinderGeometry(0.42, 0.42, 0.12, 10), [x, y + h + 0.1, z]), C.dgrey);
-  });
-  add('plain', BB(-1, 5.35, -4.5, 1, 5.75, -2.5), C.grey, { self: oHab });
-  add('plain', BB(-0.9, 5.75, -4.4, 0.9, 5.8, -2.6), C.orange);
+  // =============== MAIN HABITAT: three bare modules on cradles, unshielded ===============
+  {
+    const HY = 2.9, HZ = -1, HR = 2.6;
+    [[-13, -4.4], [-4.2, 4.2], [4.4, 13]].forEach(([x0, x1]) => {
+      add('panels', xf(new THREE.CylinderGeometry(HR, HR, x1 - x0, 24, 1, true), [(x0 + x1) / 2, HY, HZ], [0, 0, Math.PI / 2]), C.white, { tile: 0.25, self: oHab });
+      [x0 + 1.4, x1 - 1.4].forEach(x => add('plain', BB(x - 0.4, 0, HZ - 2.0, x + 0.4, 0.75, HZ + 2.0), C.dgrey, { self: oHab }));
+    });
+    [-4.3, 4.3].forEach(x => add('plain', xf(new THREE.CylinderGeometry(HR + 0.06, HR + 0.06, 0.35, 24, 1, true), [x, HY, HZ], [0, 0, Math.PI / 2]), C.orange, { self: oHab }));
+    [-1, 1].forEach(sg => {
+      add('panels', xf(new THREE.SphereGeometry(HR, 24, 8, 0, Math.PI), [sg * 13, HY, HZ], [0, sg > 0 ? -Math.PI / 2 : Math.PI / 2, 0], [1, 1, 0.45]), C.white, { tile: 0.25, self: oHab });
+      add('plain', xf(new THREE.CylinderGeometry(HR + 0.06, HR + 0.06, 0.3, 24, 1, true), [sg * 13, HY, HZ], [0, 0, Math.PI / 2]), C.orange, { self: oHab });
+    });
+    [-10.5, -6.5, 6.5, 10.5].forEach(x => {
+      add('plain', BB(x - 0.72, HY - 0.6, HZ + HR - 0.1, x + 0.72, HY + 0.6, HZ + HR + 0.06), C.grey, { self: oHab });
+      add('atlas', plane(1.2, 1.0, R.win, [x, HY, HZ + HR + 0.07]), C.full, { emit: true });
+    });
+    [[-8, 1.2], [0, 0.9], [9, 1.0]].forEach(([x, h]) => {
+      add('plain', tube(V3(x, HY + HR - 0.1, HZ), V3(x, HY + HR + h, HZ), 0.28, 10, false), C.silver);
+      add('plain', xf(new THREE.CylinderGeometry(0.4, 0.4, 0.12, 10), [x, HY + HR + h + 0.06, HZ]), C.dgrey);
+    });
+    add('panels', BB(-1.5, 0.9, 1.0, 1.5, 3.6, 4.05), C.white, { tile: 0.25, self: oLink });   // link to the airlock hub
+    add('plain', BB(-1.6, 3.6, 0.9, 1.6, 3.75, 4.05), C.orange, { self: oLink });
+    add('plain', BB(-1.2, 0, 1.4, 1.2, 0.9, 3.8), C.dgrey, { self: oLink });
+  }
 
-  // =============== INFLATABLE DOMES + covered tunnels ===============
+  // =============== INFLATABLE DOMES (bare fabric) + tunnels ===============
   [[-27, -2, -8, 9, oDomeA], [27, -1.5, -12, 8, oDomeB]].forEach(([x, cy, z, r, id]) => {
     const th = Math.acos(-cy / r);
     add('fabric', scaleUV(xf(new THREE.SphereGeometry(r, 30, 12, 0, Math.PI * 2, 0, th), [x, cy, z]), 10, 3), C.white, { self: id });
-    const rb = r + 0.5, t1 = Math.acos((2.8 - cy) / rb), t2 = Math.acos(-cy / rb);
-    add('sand', xf(new THREE.SphereGeometry(rb, 30, 3, 0, Math.PI * 2, t1, t2 - t1), [x, cy, z]), C.full, { tile: 0.42, self: id });
-    add('plain', xf(new THREE.TorusGeometry(Math.sin(t1) * rb - 0.1, 0.12, 4, 30), [x, cy + Math.cos(t1) * rb, z], [Math.PI / 2, 0, 0]), C.orange, { self: id });
+    const rg = Math.sqrt(r * r - cy * cy);
+    add('plain', xf(new THREE.TorusGeometry(rg, 0.22, 4, 30), [x, 0.1, z], [Math.PI / 2, 0, 0]), C.orange, { self: id });
     const d = V3(0, 0.62, 0.78).normalize(), wp = V3(x, cy, z).addScaledVector(d, r + 0.04);
     add('plain', (() => { const g = new THREE.PlaneGeometry(2.8, 1.1); g.lookAt(d); return g.translate(wp.x, wp.y, wp.z); })(), C.dark, { self: id });
     [-0.7, 0.7].forEach(dx => { const p = wp.clone().add(V3(dx, 0, 0)).addScaledVector(d, 0.02); add('atlas', lookPlane(1.1, 0.85, R.win, p, d), C.full, { emit: true }); });
   });
-  add('sand', archX(-4, 1.9, 2.4, -19, -13.5, 0.8, 10), C.full, { tile: 0.42 });
-  add('sand', archX(-6, 1.9, 2.4, 13.5, 19.6, 0.8, 10), C.full, { tile: 0.42 });
-
-  // =============== GREENHOUSE (front-left) ===============
-  {
-    const cx = -17, w = 5, h = 4.2, z0 = 4, z1 = 16;
-    add('green', scaleUV(xf(new THREE.CylinderGeometry(1, 1, z1 - z0, 20, 1, true, -Math.PI / 2, Math.PI), [cx, 0, (z0 + z1) / 2], [-Math.PI / 2, 0, 0], [w, 1, h]), 5, 6), C.full, { emit: true });
-    for (let z = z0; z <= z1 + 0.01; z += 2) add('plain', xf(new THREE.TorusGeometry(1, 0.012, 4, 20, Math.PI), [cx, 0, z], [0, 0, 0], [w + 0.04, h + 0.04, 4]), C.dgrey);
-    const endShape = new THREE.Shape(); for (let i = 0; i <= 20; i++) { const t = Math.PI * i / 20; endShape[i ? 'lineTo' : 'moveTo'](cx + w * Math.cos(t), h * Math.sin(t)); }
-    [z0, z1].forEach(z => add('plain', new THREE.ShapeGeometry(endShape).translate(0, 0, z + (z === z1 ? 0.01 : -0.01)), C.white, { self: oGH }));
-    add('atlas', plane(1.2, 2.2, R.door, [cx, 1.1, z1 + 0.03]), C.full);
-    add('plain', BB(cx - 0.75, 0, z1, cx + 0.75, 2.4, z1 + 0.03), C.orange, { self: oGH });
-    [-3, 3].forEach(dx => add('atlas', plane(1.3, 1.1, R.win, [cx + dx, 1.6, z1 + 0.03]), C.full, { emit: true }));
-    [-1, 1].forEach(sg => add('sand', BB(cx + sg * w - 0.5, 0, z0 - 0.3, cx + sg * w + 0.5, 0.75, z1 + 0.3), C.full, { tile: 0.42, self: oGH }));
-  }
+  [[V3(-13.5, 1.5, -2), V3(-20, 1.5, -4)], [V3(13.5, 1.5, -2), V3(18, 1.5, -2), V3(22.4, 1.5, -6)]].forEach(pts => {
+    for (let i = 0; i < pts.length - 1; i++) {
+      add('panels', tube(pts[i], pts[i + 1], 1.2, 12), C.white, { tile: 0.25 });
+      add('plain', tube(pts[i].clone().lerp(pts[i + 1], 0.5).addScaledVector(pts[i + 1].clone().sub(pts[i]).normalize(), -0.12), pts[i].clone().lerp(pts[i + 1], 0.5).addScaledVector(pts[i + 1].clone().sub(pts[i]).normalize(), 0.12), 1.25, 12, false), C.orange);
+    }
+    if (pts.length > 2) add('plain', xf(new THREE.SphereGeometry(1.2, 12, 8), pts[1].toArray()), C.white);
+    pts.slice(0, -1).forEach(p => add('plain', BB(p.x - 0.3, 0, p.z - 0.8, p.x + 0.3, 0.35, p.z + 0.8), C.dgrey));
+  });
 
   // =============== GARAGE + rover airlock + charging (front-right) ===============
   add('panels', BB(11, 0, 0, 25, 7, 14), C.white, { tile: 0.25, self: oGar });
-  add('sand', BB(10.6, 7, -0.4, 25.4, 7.8, 14.4), C.full, { tile: 0.42, self: oGar });
-  { const sh = new THREE.Shape([V2(25, 0), V2(29.2, 0), V2(25, 6.8)]); add('sand', new THREE.ExtrudeGeometry(sh, { depth: 14.4, bevelEnabled: false }).translate(0, 0, -0.2), C.full, { tile: 0.42, self: oBerm }); }
+  add('plain', BB(10.9, 7, -0.1, 25.1, 7.3, 14.1), C.grey, { self: oGar });
   add('plain', BB(11, 6.2, 14, 25, 6.5, 14.05), C.orange, { self: oGar });
   add('atlas', plane(6, 4.6, R.garage, [18, 2.3, 14.03]), C.full, { self: oGar });
   [[14.85, 15.15], [20.85, 21.15]].forEach(([a, b]) => add('plain', BB(a, 0, 14, b, 4.9, 14.25), C.orange, { self: oGar }));
@@ -337,40 +309,65 @@ export function buildMarsBase(THREE, { sunDir = new THREE.Vector3(0.4, 0.72, 0.5
     [-1.5, 0, 1.5].forEach(dz => [-1, 1].forEach(sg => add('plain', xf(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 12), [rx + sg * 1.05, 0.42, rz + dz], [0, 0, Math.PI / 2]), C.dark, { dust: 1.6 })));
   }
 
-  // =============== STORAGE: tanks (right) and containers (left) ===============
-  [[4, R.lblVand], [8.5, R.lblO2], [13, R.lblCH4]].forEach(([z, lbl]) => {
-    add('plain', xf(new THREE.CylinderGeometry(1.4, 1.4, 9, 16, 1, true), [35, 1.9, z], [0, 0, Math.PI / 2]), C.white, { self: oTH });
-    [-1, 1].forEach(sg => add('plain', xf(new THREE.SphereGeometry(1.4, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2), [35 + sg * 4.5, 1.9, z], [0, 0, -sg * Math.PI / 2], [1, 0.45, 1]), C.white, { self: oTH }));
-    [31.5, 38.5].forEach(x => add('plain', xf(new THREE.CylinderGeometry(1.43, 1.43, 0.35, 16, 1, true), [x, 1.9, z], [0, 0, Math.PI / 2]), C.orange, { self: oTH }));
-    [31, 35, 39].forEach(x => add('plain', BB(x - 0.25, 0, z - 1.1, x + 0.25, 0.9, z + 1.1), C.dgrey, { self: oTH }));
-    add('atlas', plane(1.2, 0.9, lbl, [35, 2.6, z + 1.25], 0), C.full, { self: oTH });
-  });
-  [-1.2, 3.8].forEach(z => {
-    add('plain', xf(new THREE.CylinderGeometry(1.8, 1.8, 7, 16, 1, true), [44, 3.5, z]), C.white, { self: oTV });
-    add('plain', xf(new THREE.SphereGeometry(1.8, 16, 5, 0, Math.PI * 2, 0, Math.PI / 2), [44, 7, z], [0, 0, 0], [1, 0.5, 1]), C.white, { self: oTV });
-    add('plain', xf(new THREE.CylinderGeometry(1.83, 1.83, 0.4, 16, 1, true), [44, 5.6, z]), C.orange, { self: oTV });
-    add('atlas', plane(0.3, 5.0, R.hazard, [44, 3.0, z + 1.82], 0, true), C.full, { self: oTV });
-  });
-  add('plain', tube(V3(40.3, 1.2, 8.5), V3(42.6, 1.2, 3.8), 0.14, 6), C.silver);
-  add('plain', tube(V3(29.5, 0.9, 8.5), V3(25.8, 0.9, 8.5), 0.16, 6), C.silver);
+  // =============== STORAGE: cargo containers (left) ===============
   const cont = (x, y, z, rotY, tint) => add('atlas', uvRect(xf(new THREE.BoxGeometry(6.1, 2.6, 2.44), [x, y + 1.3, z], [0, rotY, 0]), R.cont), tint, { self: oCont });
   cont(-37, 0, 0, 0, C.orange); cont(-37, 0, 3, 0, C.white); cont(-37, 2.6, 1.5, 0.05, C.orange);
   cont(-37.5, 0, 7.5, 0, C.white); cont(-31.5, 0, 9, Math.PI / 2 - 0.08, C.orange); cont(-43, 0, 4.5, Math.PI / 2, C.white);
 
-  // =============== ENERGY: solar fields + kilopower behind a berm ===============
-  rows.forEach(r => {
-    for (let x = r.x0 + 2.75; x < r.x1; x += 5.5) {
-      add('atlas', uvRect(xf(new THREE.BoxGeometry(5.3, 0.06, 2.2), [x, 1.25, r.z], [0.44, 0, 0]), R.solar), C.full, { noDust: true, self: r.occ });
-      [-1.8, 1.8].forEach(dx => add('plain', BB(x + dx - 0.06, 0, r.z - 0.06, x + dx + 0.06, 1.2, r.z + 0.06), C.dgrey, { self: r.occ }));
-    }
-  });
-  add('plain', xf(new THREE.SphereGeometry(1, 20, 6, 0, Math.PI * 2, 0, Math.PI / 2), [40, 0, -36.5], [0, 0, 0], [12.5, 2.6, 2.6]), C.regolith, { self: oRB, dust: 0 });
-  add('plain', BB(38, 0, -44.5, 42, 0.3, -40.5), C.dgrey);
-  add('plain', xf(new THREE.CylinderGeometry(0.5, 0.55, 2.2, 12), [40, 1.4, -42.5]), C.silver);
-  add('plain', xf(new THREE.CylinderGeometry(2.6, 0.55, 2.0, 16, 1, true), [40, 3.5, -42.5]), C.white);
-  add('plain', tube(V3(40, 4.5, -42.5), V3(40, 5.3, -42.5), 0.06, 6), C.dgrey);
-  add('plain', tube(V3(33, 0, -33.5), V3(33, 2.2, -33.5), 0.06, 6), C.dgrey);
-  add('atlas', plane(2.6, 0.5, R.warn, [33, 2.1, -33.44]), C.full);
+  // =============== CONSTRUCTION SITE ===============
+  // unfinished module frame (right, where nothing is built yet)
+  {
+    const fy = 2.6, fz = 7, fr = 2.2;
+    [30, 32, 34, 36, 38].forEach(x => add('plain', xf(new THREE.TorusGeometry(fr, 0.07, 4, 18), [x, fy, fz], [0, Math.PI / 2, 0]), C.silver, { noCast: true }));
+    for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, y = fy + Math.sin(a) * fr, z = fz + Math.cos(a) * fr; add('plain', tube(V3(29.9, y, z), V3(k % 3 ? 38.1 : 34.1, y, z), 0.045, 4), C.dgrey, { noCast: true }); }
+    [31, 37].forEach(x => add('plain', BB(x - 0.4, 0, fz - 1.8, x + 0.4, 0.55, fz + 1.8), C.dgrey));
+    add('panels', xf(new THREE.CylinderGeometry(fr + 0.05, fr + 0.05, 3.9, 18, 1, true, Math.PI * 0.75, Math.PI * 0.75), [31.95, fy, fz], [0, 0, Math.PI / 2]), C.white, { tile: 0.25 });
+    [[27.8, 8.5, 0.3], [26.8, 3.6, -0.5], [28.4, 12.2, 1.1]].forEach(([cx, cz, ry]) => { const y = 0.4; add('plain', xf(new THREE.ConeGeometry(0.2, 0.65, 8, 1, true), [cx, y + 0.32 - 0.4, cz]), C.orange, { noCast: true }); add('plain', xf(new THREE.CylinderGeometry(0.2, 0.2, 0.08, 8, 1, true), [cx, 0.28, cz]), C.white, { noCast: true }); });
+  }
+  // mobile crane lifting a wall panel onto the frame
+  {
+    add('plain', BB(33.8, 0.55, 11.8, 38.4, 1.3, 14.4), C.gold, { self: oCrane });
+    add('plain', BB(37.2, 1.3, 11.9, 38.4, 2.6, 14.3), C.white, { self: oCrane });
+    add('plain', BB(38.38, 1.8, 12.1, 38.42, 2.4, 14.1), C.glass);
+    [34.4, 36.1, 37.8].forEach(x => [11.7, 14.5].forEach(z => add('plain', xf(new THREE.CylinderGeometry(0.5, 0.5, 0.35, 12), [x, 0.5, z], [Math.PI / 2, 0, 0]), C.dark, { dust: 1.6 })));
+    add('plain', xf(new THREE.CylinderGeometry(0.45, 0.55, 0.5, 10), [35.2, 1.55, 13.1]), C.orange, { self: oCrane });
+    const b0 = V3(35.2, 1.9, 13.1), b1 = V3(34.2, 8.6, 7.4);
+    add('plain', tube(b0, b1, 0.18, 6), C.orange); add('plain', tube(b0.clone().add(V3(0, 0.2, 0)), V3(35, 2.4, 11.2), 0.12, 5), C.dgrey);
+    add('plain', tube(b1, V3(34.2, 6.2, 7.4), 0.02, 3), C.dark);
+    add('plain', BB(33.95, 5.95, 7.15, 34.45, 6.2, 7.65), C.dark);
+    add('panels', xf(new THREE.BoxGeometry(2.1, 0.08, 1.7), [34.2, 5.8, 7.4], [0, 0.4, 0.12]), C.white, { tile: 0.25 });
+    [[33.4, 11.8], [38.8, 11.8], [33.4, 14.4], [38.8, 14.4]].forEach(([x, z]) => add('plain', BB(x - 0.2, 0, z - 0.2, x + 0.2, 0.55, z + 0.2), C.dgrey));
+  }
+  // pallets with wall panels, crates and cable drums (front-left)
+  {
+    const pallet = (x, z, ry, n, tint) => {
+      add('plain', xf(new THREE.BoxGeometry(3.2, 0.2, 1.6), [x, 0.1, z], [0, ry, 0]), C.dgrey, { self: oStack });
+      for (let k = 0; k < n; k++) add('panels', xf(new THREE.BoxGeometry(3.0, 0.12, 1.45), [x, 0.26 + k * 0.13, z], [0, ry + (k % 2 ? 0.03 : -0.02), 0]), tint, { tile: 0.25, self: oStack });
+    };
+    pallet(-15.5, 6.8, 0.1, 9, C.white); pallet(-15.2, 9.6, -0.05, 6, C.white); pallet(-19.6, 7.2, 0.3, 4, C.grey);
+    const crate = (x, y, z, ry, tint, sc = 1) => add('atlas', uvRect(xf(new THREE.BoxGeometry(1.6 * sc, 1.2 * sc, 1.2 * sc), [x, y + 0.6 * sc, z], [0, ry, 0]), R.cont), tint, { self: oStack });
+    crate(-21, 0, 11, 0.2, C.orange); crate(-19.2, 0, 11.6, -0.1, C.white); crate(-20.3, 1.2, 11.3, 0.05, C.orange, 0.85);
+    crate(-17.1, 0, 13, 0.6, C.white); crate(-22.6, 0, 8.8, 1.2, C.grey);
+    [[-13.8, 12.6], [-14.6, 13.9]].forEach(([x, z], i) => {
+      add('plain', xf(new THREE.CylinderGeometry(0.75, 0.75, 0.9, 14), [x, 0.75, z], [Math.PI / 2, i * 0.4, 0]), C.dark, { self: oStack });
+      [-0.47, 0.47].forEach(dz => add('plain', xf(new THREE.CylinderGeometry(0.95, 0.95, 0.06, 14), [x + Math.sin(i * 0.4) * dz, 0.95, z + Math.cos(i * 0.4) * dz], [Math.PI / 2, i * 0.4, 0]), C.orange, { self: oStack }));
+    });
+    const cab = [V3(-13.2, 0.05, 12.2), V3(-9, 0.05, 11.2), V3(-4.5, 0.05, 10.2), V3(-3.1, 0.3, 8.8)];
+    for (let i = 0; i < cab.length - 1; i++) add('plain', tube(cab[i], cab[i + 1], 0.04, 4), C.dark, { noCast: true });
+  }
+  // temporary battery crates powering the comms mast, dish and airlock hub
+  {
+    [0.9, 2.5, 4.1].forEach((x, i) => {
+      add('plain', BB(x - 0.65, 0, -15.2, x + 0.65, 1.0, -13.8), C.dgrey, { self: oBatt });
+      add('plain', BB(x - 0.7, 1.0, -15.25, x + 0.7, 1.08, -13.75), C.orange, { self: oBatt });
+      add('plain', BB(x - 0.4, 0.72, -13.79, x + 0.1, 0.82, -13.77), i === 2 ? C.orange : C.green, { emit: true });
+      add('plain', BB(x + 0.25, 0.72, -13.79, x + 0.45, 0.82, -13.77), C.lamp, { emit: true });
+    });
+    const cable = pts => { for (let i = 0; i < pts.length - 1; i++) add('plain', tube(V3(...pts[i]), V3(...pts[i + 1]), 0.04, 4), C.dark, { noCast: true }); };
+    cable([[4.7, 0.3, -14.5], [5.4, 0.05, -15.8], [6, 0.05, -17.2], [6, 0.4, -17.6]]);
+    cable([[0.3, 0.3, -14.5], [-2.5, 0.05, -15.2], [-5.6, 0.05, -16], [-6.6, 0.5, -16.4]]);
+    cable([[2.5, 0.05, -13.7], [2.2, 0.05, -9], [1.2, 0.05, -5], [0.4, 0.3, -3.5]]);
+  }
 
   // =============== COMMUNICATION: lattice mast + dish ===============
   {
@@ -449,14 +446,13 @@ export function buildMarsBase(THREE, { sunDir = new THREE.Vector3(0.4, 0.72, 0.5
   strip([[0, 64], [0, 12.2]], 6.5, 0.9, 0.03);
   [-1.18, 1.18].forEach(x => strip([[x, 64], [x, 12.5]], 0.55, 0.72));
   [-0.85, 0.85].forEach(o => strip([[1 + o, 26], [6 + o, 23 + o * 0.3], [12 + o * 0.6, 20.5 + o * 0.6], [16 + o * 0.9, 18.5 + o * 0.9], [18 + o, 15.5]], 0.45, 0.74));
-  [-0.85, 0.85].forEach(o => strip([[24, 16 + o], [30, 17 + o], [37, 17.2 + o], [42, 12 + o]], 0.45, 0.76));
-  strip([[-1.8, 12.2], [-8, 14.2], [-13, 16.8], [-17, 17.6]], 1.3, 0.84);
-  strip([[-14, -6], [-20, -14], [-28, -20], [-35, -21]], 1.2, 0.86);
-  strip([[40, -37], [32, -26], [20, -14], [12, -9]], 0.8, 0.78);
+  strip([[-1.8, 12.2], [-8, 13.2], [-13, 12.8], [-15.5, 11.4]], 1.3, 0.84);
+  strip([[1.5, -4], [2.2, -9], [2.5, -13.4]], 1.0, 0.86);
+  [-0.9, 0.9].forEach(o => strip([[36 + o, 15.6], [33 + o, 19 + o * 0.2], [28 + o * 0.5, 20.5 + o], [22, 21.5 + o]], 0.5, 0.76));
   strip([[-18, 0], [-26, 3], [-32, 5.5]], 1.4, 0.82);
 
   // ---------- merge ----------
-  const group = new THREE.Group(); group.name = 'MarsBase';
+  const group = new THREE.Group(); group.name = 'MarsBaseSite';
   for (const k of Object.keys(B)) {
     if (!B[k].length) continue;
     let n = 0; B[k].forEach(g => n += g.attributes.position.count);
