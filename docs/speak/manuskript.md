@@ -88,7 +88,7 @@ Teksterne herunder er **udkast**. Ret dem frit, de er kun et bud på noget, der 
 >
 > På Mars blæser det tit. Vinden er svag, fordi luften er så tynd, men den kan løfte fint støv højt op. Nogle gange bliver støvet til en kæmpe støvstorm, der kan dække hele planeten i flere uger. Så bliver himlen mørk, og solen er næsten væk.
 >
-> Det er et problem for basen, for den får meget af sin strøm fra solpaneler. Støv på panelerne giver mindre strøm. Derfor skal solpanelerne jævnligt gøres rene.
+> Tænk over det: Hvad betyder al det støv for en base, der skal have strøm, og for de mennesker, der skal bo der?
 >
 > Snart kommer vi til et sted, hvor vinden har samlet sandet i store bunker.
 
@@ -102,15 +102,15 @@ Teksterne herunder er **udkast**. Ret dem frit, de er kun et bud på noget, der 
 ## 8. Kørsel mod Marsbasen
 
 - **Fil:** `08-mod-basen.mp3`, ca. 77 sekunder
-- **Eleverne ser:** Et sving til venstre og et til højre. Derefter en lang lige strækning (ca. 30 sekunder), hvor Marsbasen vokser frem forude.
+- **Eleverne ser:** Et sving til venstre og et til højre. Derefter en lang lige strækning (ca. 30 sekunder), hvor Marsbasen vokser frem forude. Basen er en byggeplads: nogle moduler og kupler står der, en kran løfter et vægpanel, og der ligger paller med materialer. Der er ingen strålebeskyttelse, ingen solpaneler, intet drivhus og ingen tanke. De løsninger skal eleverne selv finde på.
 
 > Nu er vi på den sidste strækning. Om lidt kan I se Marsbasen.
 >
-> Basen har ligget her i halvtreds år. Den er bygget lidt efter lidt, ét modul ad gangen. I dag bor og arbejder der mange mennesker.
+> Basen er kun lige begyndt. De første moduler er landet og stillet op, men meget mangler endnu.
 >
-> For at leve på Mars skal man have fire ting: luft at trække vejret i, vand, mad og strøm. Intet af det kan man bare hente udenfor. Luften laves inde i basen. Vandet kommer fra is, der graves op under jorden. Maden dyrkes i drivhuse. Og strømmen kommer fra solpaneler.
+> For at leve på Mars skal man have luft at trække vejret i, vand, mad og strøm. Man skal også beskyttes mod den farlige stråling fra rummet, for Mars har ikke et tykt lag luft, der skærmer, som Jorden har. Intet af det kan man bare hente udenfor.
 >
-> Kig frem. Der er Marsbasen. Den bliver jeres hjem, mens I er her. Hvad tror I, man ellers skal bruge for at bo på Mars?
+> Kig frem. Der er Marsbasen. Det er jer, der skal finde ud af, hvordan den skal blive et sted, man kan bo i mange år. Hvordan vil I klare det?
 
 ## 9. Ankomst til Marsbasen
 

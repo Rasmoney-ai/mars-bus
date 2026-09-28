@@ -9,7 +9,7 @@ import { hash2, valueNoise } from './util/noise.js';
 import { MeshBuilder, compose, bakedMaterial } from './util/mesh.js';
 import { worldLight, headingVectors, sunDirection } from './terrain.js';
 import { buildLander } from './lander.js';
-import { buildMarsBase } from './marsBase.js';
+import { buildMarsBaseSite } from './marsBaseSite.js';
 import { buildCuriosity } from './curiosity.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -166,7 +166,8 @@ function buildRoverGroup(terrain) {
   return rover;
 }
 
-// Marsbasen (made with Claude Design): entrance towards the arriving bus,
+// Marsbasen as a building site (made with Claude Design): the problems of
+// living on Mars are left unsolved for the pupils. Entrance towards the bus,
 // light baked from the scene's sun, ground fading into the terrain.
 function buildBaseGroup(terrain) {
   const p = terrain.layout.base;
@@ -179,7 +180,7 @@ function buildBaseGroup(terrain) {
     c.set(terrain.surfaceColor(p.x + Math.cos(a) * 62, p.z + Math.sin(a) * 62));
     r += c.r / 12; g += c.g / 12; bl += c.b / 12;
   }
-  const { group } = buildMarsBase(THREE, { sunDir, groundColor: `#${c.setRGB(r, g, bl).getHexString()}` });
+  const { group } = buildMarsBaseSite(THREE, { sunDir, groundColor: `#${c.setRGB(r, g, bl).getHexString()}` });
   group.position.set(p.x, terrain.heightAt(p.x, p.z), p.z);
   group.quaternion.copy(q);
   return group;

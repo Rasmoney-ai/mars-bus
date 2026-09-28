@@ -72,7 +72,7 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `src/bus.js` | sætter modellen ind i turen: sædepladser, levende kort, infoskærm og hjul |
 | `src/terrain.js`, `src/landmarks.js` | Mars-landskab, vej, sten, himmel og landemærker |
 | `src/lander.js` | landingsmodulet LM-03, lavet med Claude Design |
-| `src/marsBase.js` | Marsbasen, lavet med Claude Design |
+| `src/marsBaseSite.js` | Marsbasen som byggeplads, lavet med Claude Design. Strålebeskyttelse, energi, vand og mad er ikke løst, så eleverne selv kan finde løsninger |
 | `src/curiosity.js` | roveren Curiosity, lavet med Claude Design |
 | `src/rover.js` | Curiosity kører mellem sten ved Murray Buttes, med hjul, mast og arm |
 | `src/suitGear.js` | hjelm og handsker, lavet med Claude Design |
