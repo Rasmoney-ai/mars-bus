@@ -125,7 +125,11 @@ export class Narration {
     peak.type = 'peaking'; peak.frequency.value = SPK.presence.freq; peak.Q.value = 1.1; peak.gain.value = SPK.presence.gain;
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -20; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2;
-    out.connect(hp).connect(lp).connect(peak).connect(comp);
+    // A gently overdriven small speaker.
+    const drive = ctx.createWaveShaper();
+    drive.curve = softClip(SPK.drive);
+    drive.oversample = '2x';
+    out.connect(hp).connect(peak).connect(drive).connect(lp).connect(comp);
 
     const panner = ctx.createPanner();
     panner.panningModel = 'HRTF';
@@ -186,4 +190,15 @@ function cabinEcho(ctx) {
     [0.004, 0.009, 0.013, 0.021].forEach((s, k) => { d[Math.round(s * rate) + ch * 7] += (k % 2 ? -0.5 : 0.6) / (k + 1); });
   }
   return buf;
+}
+
+// Soft saturation curve; amount 0 = clean, 1 = strongly overdriven. Quiet
+// sounds pass unchanged, loud peaks are rounded off (never louder).
+function softClip(amount) {
+  const n = 1024, curve = new Float32Array(n), k = 1 + amount * 8;
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    curve[i] = Math.tanh(k * x) / k;
+  }
+  return curve;
 }
