@@ -26,6 +26,8 @@ Speaket starter lidt efter hvert afsnits begyndelse: 1,5 sekund efter bussen kø
 
 Hele turen varer ca. 6 min. 57 sek.
 
+Manuskriptet findes også som Word-fil: `docs/speak/manuskript.docx`. Den laves ud fra denne fil, så ret her først.
+
 Teksterne herunder er **udkast**. Ret dem frit, de er kun et bud på noget, der passer til tiderne.
 
 ---
