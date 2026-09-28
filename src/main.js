@@ -24,7 +24,7 @@ import { DesktopControls } from './desktop.js';
 import { VRSession } from './xr.js';
 import { createNetwork } from './network.js';
 
-// --- Settings (start page or URL: ?seat=3&comfort=1&sim=0&speak=0&debug) ----
+// --- Settings (start page or URL: ?seat=3&comfort=1&sim=0&speak=0&voice=rasmus&debug)
 
 const params = new URLSearchParams(location.search);
 const settings = {
@@ -32,6 +32,7 @@ const settings = {
   comfort: params.get('comfort') === '1',
   simulated: params.get('sim') !== '0',
   speak: params.get('speak') !== '0',
+  voice: NARRATION.voices[params.get('voice')] ? params.get('voice') : NARRATION.defaultVoice,
   debug: params.has('debug'),
 };
 
@@ -44,6 +45,7 @@ function saveSettingsToUrl() {
   p.set('seat', String(settings.seat));
   if (settings.comfort) p.set('comfort', '1'); else p.delete('comfort');
   if (!settings.simulated) p.set('sim', '0'); else p.delete('sim');
+  if (settings.voice !== NARRATION.defaultVoice) p.set('voice', settings.voice); else p.delete('voice');
   history.replaceState(null, '', `${location.pathname}?${p.toString()}`);
 }
 
@@ -95,7 +97,7 @@ const rover = new RoverMotion(world.rover, world.layout.rover, world.layout.stop
   timeline.stops.find((st) => st.id === 'cliff').arrival, world.terrain);
 const narration = new Narration(timeline, sound);
 narration.setEnabled(settings.speak);
-narration.load();
+narration.setVoice(settings.voice);
 const network = createNetwork(); // null until step 2
 
 // Fade to black (comfort mode): a small black sphere around the eyes.
@@ -142,6 +144,12 @@ const actions = {
     else if (!comfortSwitch) comfortSwitch = { to: !settings.comfort, start: performance.now(), done: false };
   },
   toggleSimulated() { actions.setSimulated(!settings.simulated); },
+  setVoice(key) {
+    settings.voice = key;
+    narration.setVoice(key);
+    dom.refreshSettings();
+    saveSettingsToUrl();
+  },
   async enterVR() {
     sound.unlock();
     try {

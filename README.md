@@ -45,6 +45,7 @@ Tryk **Se på skærmen**. Træk med musen for at kigge rundt.
 - `&comfort=1`: komforttilstand til
 - `&sim=0`: ingen simulerede passagerer
 - `&speak=0`: intet speak
+- `&voice=rasmus`: guiden taler med Rasmus' stemme (filerne i `audio/speak-rasmus/`). Kan også vælges på startsiden.
 - `&debug`: viser billeder pr. sekund på skærmen foran dig
 
 Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
