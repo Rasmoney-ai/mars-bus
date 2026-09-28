@@ -32,15 +32,29 @@ export class Narration {
     }
     this.playing = null; // { part, source, ctxStart, offset }
     this.out = null;
+    this.voice = NARRATION.defaultVoice;
+    this.generation = 0; // bumped when the voice changes, so late loads are dropped
   }
 
-  // Fetch all files in the background (small mp3 files).
+  // Switch between the recordings (keys of NARRATION.voices) and load it.
+  setVoice(key) {
+    if (!NARRATION.voices[key]) key = NARRATION.defaultVoice;
+    if (key === this.voice && this.generation > 0) return;
+    this.voice = key;
+    this._stop();
+    this.load();
+  }
+
+  // Fetch all files of the current voice in the background (small mp3 files).
   load() {
+    const gen = ++this.generation;
+    const folder = NARRATION.voices[this.voice].folder;
     for (const part of this.parts) {
-      fetch(`${NARRATION.folder}${part.name}.mp3`)
+      Object.assign(part, { data: null, buffer: null, decoding: false, missing: false, gen });
+      fetch(`${folder}${part.name}.mp3`)
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.status))))
-        .then((data) => { part.data = data; })
-        .catch(() => { part.missing = true; });
+        .then((data) => { if (part.gen === gen) part.data = data; })
+        .catch(() => { if (part.gen === gen) part.missing = true; });
     }
   }
 
@@ -104,11 +118,12 @@ export class Narration {
       }
       if (part.buffer || part.decoding || !part.data) return;
       part.decoding = true;
+      const gen = part.gen;
       // decodeAudioData detaches the data it is given, so pass a copy.
       ctx.decodeAudioData(part.data.slice(0))
-        .then((buffer) => { part.buffer = buffer; })
-        .catch(() => { part.missing = true; })
-        .finally(() => { part.decoding = false; });
+        .then((buffer) => { if (part.gen === gen) part.buffer = buffer; })
+        .catch(() => { if (part.gen === gen) part.missing = true; })
+        .finally(() => { if (part.gen === gen) part.decoding = false; });
     });
   }
 
