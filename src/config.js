@@ -26,8 +26,11 @@ export const SEATS = {
   seatHeight: 0.42,         // top of the cushion above the bus floor (from the model)
   // Where the head sits relative to the seat centre (forward is -z).
   headOffsetZ: 0.02,
-  // Eye height above the floor, used on desktop and for simulated passengers.
+  // Eye height above the bus floor, seated. In VR your head is moved to this
+  // height when you enter and when you recenter with the Meta button, since
+  // the headset's own floor height is often off by 10-30 cm when seated.
   eyeHeight: 1.08,
+  autoEyeHeight: true,
   // One helmet colour per seat (seat 1 first).
   colors: [
     '#e53935', '#fb8c00', '#fdd835', '#7cb342', '#00a88f',

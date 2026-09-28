@@ -11,7 +11,7 @@ Trin 1 (soloturen) er bygget: én passager, lokalt ur og simulerede medpassagere
 1. Åbn linket i Meta Quest-browseren.
 2. Vælg plads (1-10). Plads 1 og 2 sidder forrest.
 3. Tryk **Gå ind i VR**. Turen starter efter en velkomst og en nedtælling.
-4. Sid ned, og kig lige frem. Hold Meta-knappen inde for at rette billedet ind.
+4. Sid ned, og kig lige frem. Hold Meta-knappen inde for at rette billedet ind. Øjenhøjden sættes selv til en naturlig siddehøjde, når du går ind i VR, og når du retter ind.
 
 Den lille skærm foran din plads har knapperne **Pause / Fortsæt**, **Forfra / Kør igen** og **Komfort til/fra**. Du kan:
 
