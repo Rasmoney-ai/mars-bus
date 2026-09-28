@@ -5,7 +5,7 @@
 // small steps; everything is computed from t.
 
 import * as THREE from 'three';
-import { RENDER, SEATS } from './config.js';
+import { RENDER, SEATS, NARRATION } from './config.js';
 import { Path, ROUTE } from './route.js';
 import { Timeline, smooth } from './timeline.js';
 import { createWorld } from './terrain.js';
@@ -246,6 +246,21 @@ const vr = new VRSession(renderer, {
 
 applySeat();
 
+// The guide's ceiling speaker, above and a little ahead of your seat; the
+// listener is your head, both in bus coordinates, so the voice stays up in
+// the roof when you turn your head.
+const spk = { m: new THREE.Matrix4(), inv: new THREE.Matrix4(), q: new THREE.Quaternion(), s: new THREE.Vector3(),
+  head: new THREE.Vector3(), fwd: new THREE.Vector3(), up: new THREE.Vector3(), pos: new THREE.Vector3() };
+function placeSpeaker() {
+  seatOrigin(settings.seat, spk.pos);
+  spk.pos.set(0, spk.pos.y + NARRATION.speaker.height, spk.pos.z - NARRATION.speaker.ahead);
+  spk.inv.copy(bus.group.matrixWorld).invert();
+  spk.m.multiplyMatrices(spk.inv, camera.matrixWorld).decompose(spk.head, spk.q, spk.s);
+  spk.fwd.set(0, 0, -1).applyQuaternion(spk.q);
+  spk.up.set(0, 1, 0).applyQuaternion(spk.q);
+  narration.setListener(spk.pos, spk.head, spk.fwd, spk.up);
+}
+
 // --- Frame loop -----------------------------------------------------------------
 
 const view = { pose: {}, fade: 0, phase: null };
@@ -315,6 +330,7 @@ function frame() {
   fade.material.opacity = fadeLevel;
   sound.setEngine(view.pose.v, clock.playing);
   narration.update(t, clock.playing);
+  placeSpeaker();
 
   if (!vr.active) desktop.apply();
   dom.update(t, clock.playing, status, fps, now);

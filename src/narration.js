@@ -9,6 +9,8 @@
 
 import { NARRATION } from './config.js';
 
+const SPK = NARRATION.speaker;
+
 export class Narration {
   constructor(timeline, sound) {
     this.sound = sound;
@@ -51,11 +53,7 @@ export class Narration {
   update(t, running) {
     const ctx = this.sound.ctx;
     if (!ctx || ctx.state !== 'running') return;
-    if (!this.out) {
-      this.out = ctx.createGain();
-      this.out.gain.value = NARRATION.volume;
-      this.out.connect(this.sound.master);
-    }
+    if (!this.out) this._buildChain(ctx);
 
     // The part that should be heard now: the latest one that has started
     // and has not yet finished (a long part keeps going until the next
@@ -114,10 +112,78 @@ export class Narration {
     });
   }
 
+  // Loudspeaker sound: volume -> small-speaker EQ -> gentle compression ->
+  // a panner at the ceiling speaker (dry) plus a little cabin echo (wet).
+  _buildChain(ctx) {
+    const out = ctx.createGain();
+    out.gain.value = NARRATION.volume;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = SPK.highpass; hp.Q.value = 0.8;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = SPK.lowpass; lp.Q.value = 0.9;
+    const peak = ctx.createBiquadFilter();
+    peak.type = 'peaking'; peak.frequency.value = SPK.presence.freq; peak.Q.value = 1.1; peak.gain.value = SPK.presence.gain;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -20; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2;
+    out.connect(hp).connect(lp).connect(peak).connect(comp);
+
+    const panner = ctx.createPanner();
+    panner.panningModel = 'HRTF';
+    panner.distanceModel = 'inverse';
+    panner.refDistance = 1;
+    panner.rolloffFactor = 0;
+    comp.connect(panner).connect(this.sound.master);
+
+    const reverb = ctx.createConvolver();
+    reverb.buffer = cabinEcho(ctx);
+    const wet = ctx.createGain();
+    wet.gain.value = SPK.reverb;
+    comp.connect(reverb).connect(wet).connect(this.sound.master);
+
+    this.out = out;
+    this.panner = panner;
+  }
+
+  // Place the ceiling speaker and the listener (both in bus coordinates):
+  // speaker: Vector3; head: position Vector3, forward and up Vector3s.
+  setListener(speaker, head, forward, up) {
+    const ctx = this.sound.ctx;
+    if (!ctx || !this.panner) return;
+    const now = ctx.currentTime, tc = 0.03;
+    const set = (param, v) => param.setTargetAtTime(v, now, tc);
+    const p = this.panner, L = ctx.listener;
+    if (p.positionX) {
+      set(p.positionX, speaker.x); set(p.positionY, speaker.y); set(p.positionZ, speaker.z);
+    } else p.setPosition(speaker.x, speaker.y, speaker.z);
+    if (L.positionX) {
+      set(L.positionX, head.x); set(L.positionY, head.y); set(L.positionZ, head.z);
+      set(L.forwardX, forward.x); set(L.forwardY, forward.y); set(L.forwardZ, forward.z);
+      set(L.upX, up.x); set(L.upY, up.y); set(L.upZ, up.z);
+    } else {
+      L.setPosition(head.x, head.y, head.z);
+      L.setOrientation(forward.x, forward.y, forward.z, up.x, up.y, up.z);
+    }
+  }
+
   _stop() {
     if (!this.playing) return;
     try { this.playing.source.stop(); } catch { /* already stopped */ }
     this.playing.source.disconnect();
     this.playing = null;
   }
+}
+
+// A short, fixed "small cabin" echo: a few early reflections and a soft
+// tail of about 0.3 s (same every time: a seeded noise generator).
+function cabinEcho(ctx) {
+  const rate = ctx.sampleRate, len = Math.round(rate * 0.35);
+  const buf = ctx.createBuffer(2, len, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    let seed = 7 + ch * 101;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < len; i++) d[i] = (rnd() * 2 - 1) * Math.exp(-i / (rate * 0.07)) * 0.35;
+    [0.004, 0.009, 0.013, 0.021].forEach((s, k) => { d[Math.round(s * rate) + ch * 7] += (k % 2 ? -0.5 : 0.6) / (k + 1); });
+  }
+  return buf;
 }
