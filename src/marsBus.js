@@ -202,6 +202,15 @@ export function buildMarsBus(THREE, opts = {}) {
   const extr = (shape, depth, opt = {}) => new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1, ...opt });
   const inBasis = (g, [ex, ey], o) => g.applyMatrix4(basisM(ex, ey, o));
 
+  // APP: round mission badge without the square around it (cropped just inside the ring)
+  function atlasDisc(w, rect) {
+    const g = new THREE.CircleGeometry(w / 2 * 0.985, 40), uv = g.attributes.uv, [x0, y0, rw, rh] = rect;
+    for (let i = 0; i < uv.count; i++) {
+      const u = 0.5 + (uv.getX(i) - 0.5) * 0.985, v = 0.5 + (uv.getY(i) - 0.5) * 0.985;
+      uv.setXY(i, (x0 + u * rw) / S, 1 - (y0 + (1 - v) * rh) / S);
+    }
+    return g;
+  }
   function atlasPlane(w, h, rect) {
     const g = new THREE.PlaneGeometry(w, h), uv = g.attributes.uv, [x0, y0, rw, rh] = rect;
     for (let i = 0; i < uv.count; i++) uv.setXY(i, (x0 + uv.getX(i) * rw) / S, 1 - (y0 + (1 - uv.getY(i)) * rh) / S);
@@ -339,7 +348,7 @@ export function buildMarsBus(THREE, opts = {}) {
   const dashProfile = poly([[-3.79, 0], [-3.0, 0], [-3.0, 0.4], [-3.1, 0.7], [-3.66, 0.76], [-3.79, 0.4]]);
   add('trim', inBasis(extr(new THREE.Shape(dashProfile), 2.38), SIDE, V3(1.19, 0, 0)));
   add('light', BB(-1.1, 0.702, -3.12, 1.1, 0.712, -3.1), [0.35, 0.85, 1.0]);
-  add('sign', xf(atlasPlane(0.22, 0.22, R.badge), [0, 0.22, -2.996]));
+  add('sign', xf(atlasDisc(0.22, R.badge), [0, 0.22, -2.996])); // APP: round badge
   const pod = new THREE.Matrix4().compose(V3(0, 0.93, -3.28), new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.26, 0, 0)), V3(1, 1, 1));
   if (!liveScreens) { // APP: the app puts a live map on the dashboard face instead (keeps the windshield clear)
     add('trim', new THREE.BoxGeometry(0.8, 0.56, 0.05).applyMatrix4(pod));
@@ -354,7 +363,7 @@ export function buildMarsBus(THREE, opts = {}) {
   // ---------- exterior ----------
   [1, -1].forEach(s => {
     add('gold', BB(s > 0 ? 1.3 : -1.315, 0.52, -3.8, s > 0 ? 1.315 : -1.3, 0.58, 4.45));
-    add('sign', xf(atlasPlane(0.8, 0.8, R.badge), [s * 1.302, 1.25, 3.3], [0, s > 0 ? Math.PI / 2 : -Math.PI / 2, 0]));
+    add('sign', xf(atlasDisc(0.8, R.badge), [s * 1.302, 1.25, 3.3], [0, s > 0 ? Math.PI / 2 : -Math.PI / 2, 0])); // APP: round badge
     add('trim', BB(s * 0.95 - 0.17, 0.0, -3.915, s * 0.95 + 0.17, 0.16, -3.899));
     add('light', BB(s * 0.95 - 0.14, 0.025, -3.925, s * 0.95 + 0.14, 0.135, -3.912), [1, 0.97, 0.9]);
     add('metal', xf(new THREE.CylinderGeometry(0.018, 0.018, 4.8, 8), [s * 1.05, 2.42, -0.2], [Math.PI / 2, 0, 0]));

@@ -186,6 +186,12 @@ export function buildMarsBaseSite(THREE, { sunDir = new THREE.Vector3(0.4, 0.72,
   const toA = (u, v, [x0, y0, w, h]) => [(x0 + 2 + u * (w - 4)) / A, 1 - (y0 + 2 + (1 - v) * (h - 4)) / A];
   const uvRect = (g, rect, rot = false) => { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) { const u = uv.getX(i), v = uv.getY(i); uv.setXY(i, ...(rot ? toA(v, 1 - u, rect) : toA(u, v, rect))); } return g; };
   const plane = (w, h, rect, p, ry = 0, rot = false) => uvRect(xf(new THREE.PlaneGeometry(w, h), p, [0, ry, 0]), rect, rot);
+  // APP: round badge without the square around it (disc of diameter w, cropped just inside the ring)
+  const badgeDisc = (w, rect, p, ry = 0) => {
+    const g = new THREE.CircleGeometry(w / 2 * 0.985, 40), uv = g.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, 0.5 + (uv.getX(i) - 0.5) * 0.985, 0.5 + (uv.getY(i) - 0.5) * 0.985);
+    return uvRect(xf(g, p, [0, ry, 0]), rect);
+  };
   const scaleUV = (g, su, sv) => { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * su, uv.getY(i) * sv); return g; };
   // arch (half superellipse) extruded along X, from x0 to x1; centre zc, half-width w, height h
   function archX(zc, w, h, x0, x1, pw = 0.7, seg = 14) {
@@ -217,7 +223,7 @@ export function buildMarsBaseSite(THREE, { sunDir = new THREE.Vector3(0.4, 0.72,
   add('plain', BB(-1.75, 2.9, 10, 1.75, 3.25, 11.45), C.white, { self: oVest });
   add('atlas', plane(1.7, 0.3, R.lock, [0, 3.075, 11.46]), C.full);
   [-1.45, 1.45].forEach(x => { add('plain', BB(x - 0.16, 2.45, 10.0, x + 0.16, 2.66, 10.16), C.dark, { self: oVest }); add('plain', BB(x - 0.13, 2.48, 10.16, x + 0.13, 2.6, 10.18), C.lamp, { emit: true }); });
-  add('atlas', plane(1.3, 1.3, R.badge, [-2.2, 1.9, 10.03]), C.full, { self: oVest });
+  add('atlas', badgeDisc(1.3, R.badge, [-2.2, 1.9, 10.03]), C.full, { self: oVest }); // APP: round badge
   add('atlas', plane(0.95, 0.95, R.win, [2.2, 1.9, 10.03]), C.full, { emit: true });
   [-2.8, 2.8].forEach(z => add('atlas', plane(0.9, 0.9, R.win, [3.03, 1.9, 7 + z * 0.35], Math.PI / 2), C.full, { emit: true }));
   [-2.2, 2.2].forEach(x => add('plain', BB(x - 0.07, 4.4, 8.93, x + 0.07, 4.85, 9.07), C.dgrey));
@@ -285,7 +291,7 @@ export function buildMarsBaseSite(THREE, { sunDir = new THREE.Vector3(0.4, 0.72,
   add('plain', BB(14.85, 4.6, 14, 21.15, 4.9, 14.25), C.orange, { self: oGar });
   add('atlas', plane(3.4, 0.64, R.rover, [18, 5.45, 14.03]), C.full, { self: oGar });
   [14.3, 21.7].forEach(x => { add('plain', BB(x - 0.2, 5.0, 14, x + 0.2, 5.25, 14.3), C.dark); add('plain', BB(x - 0.16, 4.96, 14.02, x + 0.16, 5.0, 14.26), C.lamp, { emit: true }); });
-  add('atlas', plane(2.4, 2.4, R.badge, [12.9, 3.6, 14.03]), C.full, { self: oGar });
+  add('atlas', badgeDisc(2.4, R.badge, [12.9, 3.6, 14.03]), C.full, { self: oGar }); // APP: round badge
   add('plain', BB(14.5, 0, 14, 21.5, 0.1, 16), C.dgrey, { dust: 1.5 });
   add('atlas', plane(1.0, 2.0, R.door, [11 - 0.03, 1.0, 11.5], -Math.PI / 2), C.full, { self: oGar });
   add('atlas', plane(1.2, 1.0, R.win, [11 - 0.03, 2.6, 8.5], -Math.PI / 2), C.full, { emit: true });
