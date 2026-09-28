@@ -63,7 +63,17 @@ export const NARRATION = {
   // Seconds from the start of a part until its speak begins, so it does not
   // talk over the signal at departure and the chime at each stop.
   delay: { start: 0.5, drive: 1.5, stop: 2.5 },
-  volume: 1.0,
+  volume: 0.7,
+  // The guide sounds like a small loudspeaker in the ceiling of the bus,
+  // above and a little ahead of your seat.
+  speaker: {
+    height: 2.05,           // above the bus floor (m)
+    ahead: 0.45,            // in front of your head (m)
+    highpass: 320,          // small speaker: no deep bass (Hz)
+    lowpass: 5200,          // ... and no bright top (Hz)
+    presence: { freq: 2300, gain: 4 }, // a slightly nasal "tannoy" colour (Hz, dB)
+    reverb: 0.16,           // share of cabin echo
+  },
   // Re-align the speak with the ride time if it drifts more than this (s).
   resyncSeconds: 0.3,
 };
