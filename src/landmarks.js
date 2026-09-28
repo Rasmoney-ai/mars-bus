@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { WORLD } from './config.js';
 import { hash2, valueNoise } from './util/noise.js';
-import { MeshBuilder, compose, bakedMaterial } from './util/mesh.js';
+import { MeshBuilder, compose, bakedMaterial, shadeFactor } from './util/mesh.js';
 import { worldLight, headingVectors, sunDirection } from './terrain.js';
 import { buildLander } from './lander.js';
 import { buildMarsBaseSite } from './marsBaseSite.js';
@@ -105,6 +105,36 @@ function addButte(b, terrain, m, seed) {
 }
 
 // A wall quad facing outwards from `center` (in the xz plane).
+// Self-shadow: faces of a butte that the upper tiers hide from the sun are
+// darkened to sky light only (the butte's shadow falls mostly on its own
+// scree slope). Works on the triangles added since `start`.
+function shadeButte(b, start, m, terrain) {
+  const _sun = sunDirection(), _shadowLight = worldLight();
+  const base = terrain.heightAt(m.x, m.z) - 0.5;
+  const tiers = BUTTE_PROFILE.filter(([, hf]) => hf >= 0.26)
+    .map(([rf, hf]) => ({ y: base + hf * m.height, r: rf * m.radius * 0.92 }));
+  const P = b.positions, C = b.colors;
+  const e1 = new THREE.Vector3(), e2 = new THREE.Vector3(), n = new THREE.Vector3();
+  for (let i = start; i < P.length; i += 9) {
+    const cx = (P[i] + P[i + 3] + P[i + 6]) / 3, cy = (P[i + 1] + P[i + 4] + P[i + 7]) / 3, cz = (P[i + 2] + P[i + 5] + P[i + 8]) / 3;
+    e1.set(P[i + 3] - P[i], P[i + 4] - P[i + 1], P[i + 5] - P[i + 2]);
+    e2.set(P[i + 6] - P[i], P[i + 7] - P[i + 1], P[i + 8] - P[i + 2]);
+    n.crossVectors(e1, e2).normalize();
+    const lit = n.dot(_sun);
+    if (lit <= 0) continue; // already facing away from the sun
+    let shadowed = false;
+    for (const t of tiers) {
+      if (t.y <= cy + 0.3) continue;
+      const k = (t.y - cy) / _sun.y;
+      if (Math.hypot(cx + _sun.x * k - m.x, cz + _sun.z * k - m.z) < t.r) { shadowed = true; break; }
+    }
+    if (!shadowed) continue;
+    const full = shadeFactor(n, _shadowLight), sky = full - _shadowLight.diffuse * lit;
+    const f = sky / full;
+    for (let v = 0; v < 9; v++) C[i + v] *= f;
+  }
+}
+
 function wallQuad(b, p0, p1, p2, p3, color, center) {
   const n = new THREE.Vector3().subVectors(p1, p0).cross(new THREE.Vector3().subVectors(p3, p0));
   const out = V((p0.x + p1.x) / 2 - center.x, 0, (p0.z + p1.z) / 2 - center.z);
@@ -243,7 +273,11 @@ export function buildLandmarks(terrain) {
   const group = new THREE.Group();
   group.name = 'landmarks';
   const b = new MeshBuilder(worldLight());
-  L.buttes.forEach((m, i) => addButte(b, terrain, m, WORLD.seed + 10 + i));
+  L.buttes.forEach((m, i) => {
+    const start = b.positions.length;
+    addButte(b, terrain, m, WORLD.seed + 10 + i);
+    shadeButte(b, start, m, terrain);
+  });
   const { signs, poles } = buildStopSigns(terrain);
   const mesh = new THREE.Mesh(b.build(), bakedMaterial());
   mesh.matrixAutoUpdate = false;

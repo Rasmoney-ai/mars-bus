@@ -8,6 +8,7 @@ import { fbm, valueNoise, mulberry32, hash2, smoothstep, lerp } from './util/noi
 import { MeshBuilder, makeLight, shadeFactor, bakedMaterial } from './util/mesh.js';
 import { buildLandmarks } from './landmarks.js';
 import { roverRocks, siteToWorld } from './rover.js';
+import { buildGroundShadows } from './shadows.js';
 
 const DEG = Math.PI / 180;
 
@@ -519,17 +520,28 @@ function buildRocks(terrain) {
     return false;
   };
 
+  // Every rock, for the ground shadows (shadows.js).
+  const spots = [];
+  const _ao = new THREE.Color();
+  // Faces low on a rock are darker: little sky reaches them (ambient occlusion).
+  let aoGround = 0, aoTop = 1;
+  const aoColor = (centroid) => _ao.copy(col).multiplyScalar(0.55 + 0.45 * smoothstep(aoGround, aoTop, centroid.y));
+
   const place = (x, z, size, flat = 0.6) => {
     if (blocked(x, z, size)) return;
     const pick = rng();
     const proto = size < 0.35 ? protos[Math.floor(pick * 2)] : size < 2.5 ? protos[2 + Math.floor(pick * 4)] : protos[6 + Math.floor(pick * 2)];
-    const y = terrain.heightAt(x, z) - size * 0.3;
+    const ground = terrain.heightAt(x, z);
+    const y = ground - size * 0.3;
     e.set((rng() - 0.5) * 0.5, rng() * Math.PI * 2, (rng() - 0.5) * 0.5);
     q.setFromEuler(e);
     sv.set(size * (0.8 + rng() * 0.5), size * flat * (0.7 + rng() * 0.6), size * (0.8 + rng() * 0.5));
     m.compose(pv.set(x, y, z), q, sv);
     col.copy(COLORS.rockA).lerp(COLORS.rockB, rng());
-    builder.geometry(proto, m, col);
+    const height = Math.max(0.05, y + sv.y - ground);
+    aoGround = ground; aoTop = ground + height * 0.7;
+    builder.geometry(proto, m, aoColor);
+    spots.push({ x, z, size, radius: (sv.x + sv.z) * 0.45, height, roadDistance: terrain.distanceToRoad(x, z) });
   };
 
   // Many small rocks near the route, where they are seen up close.
@@ -574,12 +586,13 @@ function buildRocks(terrain) {
     const size = 0.5 + 0.1 * i;
     m.compose(pv.set(r.x, terrain.heightAt(r.x, r.z) - 0.03, r.z), q.setFromEuler(e.set(0, 1.3 * i + 0.4, 0)), sv.set(size * 0.9, 0.32, size * 0.75));
     builder.geometry(protos[3 + i], m, col.copy(COLORS.rockA).lerp(COLORS.rockB, 0.3 + 0.4 * i));
+    spots.push({ x: r.x, z: r.z, size, radius: size * 0.75, height: 0.25, roadDistance: 0 });
   });
 
   const mesh = new THREE.Mesh(builder.build(), bakedMaterial());
   mesh.matrixAutoUpdate = false;
   mesh.name = 'rocks';
-  return mesh;
+  return { mesh, spots };
 }
 
 // --- Sky --------------------------------------------------------------------
@@ -639,7 +652,9 @@ export function createWorld(path) {
   group.name = 'world';
   group.add(terrain.buildMeshes(makeDetailTexture()));
   group.add(buildRoad(path));
-  group.add(buildRocks(terrain));
+  const rocks = buildRocks(terrain);
+  group.add(rocks.mesh);
+  group.add(buildGroundShadows(terrain, rocks.spots));
   const landmarks = buildLandmarks(terrain);
   group.add(landmarks);
   const sky = buildSky();
