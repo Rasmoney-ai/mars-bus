@@ -62,13 +62,15 @@ export const TIMELINE = {
 // One sound file per part of the ride, named in src/route.js. Missing files
 // are simply skipped, so the ride also works without them.
 export const NARRATION = {
-  // Two recordings of the same script: pick one on the start page or with
-  // ?voice=rasmus in the address. Same file names in both folders.
+  // Two recordings of the same script, same file names in both folders.
+  // Rasmus' own voice is used; the ElevenLabs one is kept and can be chosen
+  // with ?voice=ai in the address (or by changing defaultVoice). Only the
+  // chosen voice is downloaded.
   voices: {
     ai: { folder: 'audio/speak/', name: 'ElevenLabs' },
     rasmus: { folder: 'audio/speak-rasmus/', name: 'Rasmus' },
   },
-  defaultVoice: 'ai',
+  defaultVoice: 'rasmus',
   // Seconds from the start of a part until its speak begins, so it does not
   // talk over the signal at departure and the chime at each stop.
   delay: { start: 0.5, drive: 1.5, stop: 2.5 },

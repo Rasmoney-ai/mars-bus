@@ -24,7 +24,7 @@ import { DesktopControls } from './desktop.js';
 import { VRSession } from './xr.js';
 import { createNetwork } from './network.js';
 
-// --- Settings (start page or URL: ?seat=3&comfort=1&sim=0&speak=0&voice=rasmus&debug)
+// --- Settings (start page or URL: ?seat=3&comfort=1&sim=0&speak=0&voice=ai&debug)
 
 const params = new URLSearchParams(location.search);
 const settings = {

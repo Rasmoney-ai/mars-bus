@@ -19,7 +19,7 @@ Den lille skærm foran din plads har knapperne **Pause / Fortsæt**, **Forfra / 
 - trykke på aftrækkeren med en controller,
 - eller røre skærmen med en finger.
 
-Turen varer ca. 7 minutter, med tre stop (Murray Buttes med roveren Curiosity, et krater og sandklitter) og ankomst til basen. En guide fortæller undervejs (speak, lavet med ElevenLabs). Lydfilerne ligger i `audio/speak/`. Se manuskriptet i `docs/speak/manuskript.md`.
+Turen varer ca. 7 minutter, med tre stop (Murray Buttes med roveren Curiosity, et krater og sandklitter) og ankomst til basen. En guide fortæller undervejs med Rasmus' stemme. Lydfilerne ligger i `audio/speak-rasmus/`, og en udgave lavet med ElevenLabs ligger i `audio/speak/`. Se manuskriptet i `docs/speak/manuskript.md`.
 
 ## På en almindelig computer
 
@@ -45,7 +45,7 @@ Tryk **Se på skærmen**. Træk med musen for at kigge rundt.
 - `&comfort=1`: komforttilstand til
 - `&sim=0`: ingen simulerede passagerer
 - `&speak=0`: intet speak
-- `&voice=rasmus`: guiden taler med Rasmus' stemme (filerne i `audio/speak-rasmus/`). Kan også vælges på startsiden.
+- `&voice=ai`: guiden taler med stemmen fra ElevenLabs (`audio/speak/`) i stedet for Rasmus' stemme (`audio/speak-rasmus/`)
 - `&debug`: viser billeder pr. sekund på skærmen foran dig
 
 Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`

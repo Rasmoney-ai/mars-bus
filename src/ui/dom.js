@@ -8,7 +8,7 @@ import { drawBadge } from './screens.js';
 const $ = (id) => document.getElementById(id);
 
 export class DomUI {
-  // actions: { selectSeat, setComfort, setSimulated, setVoice, enterVR, startDesktop,
+  // actions: { selectSeat, setComfort, setSimulated, enterVR, startDesktop,
   //            togglePlay, prevStop, nextStop, restart, seek, showMenu }
   constructor(timeline, settings, actions) {
     this.timeline = timeline;
@@ -38,7 +38,6 @@ export class DomUI {
     $('opt-sim').checked = settings.simulated;
     $('opt-comfort').addEventListener('change', (e) => actions.setComfort(e.target.checked));
     $('opt-sim').addEventListener('change', (e) => actions.setSimulated(e.target.checked));
-    $('opt-voice').addEventListener('change', (e) => actions.setVoice(e.target.checked ? 'rasmus' : 'ai'));
     $('btn-vr').addEventListener('click', () => actions.enterVR());
     $('btn-desktop').addEventListener('click', () => actions.startDesktop());
 
@@ -65,7 +64,6 @@ export class DomUI {
     $('seat-label').textContent = `Plads ${s.seat} · ${SEATS.colorNames[s.seat - 1]} hjelm`;
     $('opt-comfort').checked = s.comfort;
     $('opt-sim').checked = s.simulated;
-    $('opt-voice').checked = s.voice === 'rasmus';
   }
 
   setVRStatus(supported, message) {
