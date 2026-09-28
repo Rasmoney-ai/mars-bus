@@ -111,6 +111,10 @@ camera.add(fade);
 
 let autoPaused = false;
 let userEyeReset = false;
+// VR: how much your seat is raised or lowered so your eyes end up at
+// SEATS.eyeHeight (measured shortly after entering VR and after recentering).
+let seatLift = 0;
+let calibrateIn = 0;
 let comfortSwitch = null;
 const SWITCH_HALF = 0.35; // seconds to fade out (and in again)
 
@@ -183,7 +187,7 @@ const actions = {
 
 function applySeat() {
   seatOrigin(settings.seat, rig.position);
-  if (vr.active && !vr.floorLevel) rig.position.y += SEATS.eyeHeight;
+  if (vr.active) rig.position.y += seatLift;
   panel.mesh.matrix.copy(seatPanelMatrix(settings.seat));
   hands.setSeat(settings.seat);
 }
@@ -216,6 +220,8 @@ desktop.onClick = (x, y) => {
 const vr = new VRSession(renderer, {
   onStart() {
     userEyeReset = true;
+    seatLift = vr.floorLevel ? 0 : SEATS.eyeHeight;
+    calibrateIn = 10; // frames, so the headset pose has settled
     dom.hideAll();
     desktop.enabled = false;
     applySeat();
@@ -240,6 +246,7 @@ const vr = new VRSession(renderer, {
     }
   },
   onReset() {
+    calibrateIn = 3;
     panel.flash('Billedet er rettet ind', performance.now());
   },
 });
@@ -306,9 +313,18 @@ function frame() {
   screens.update(status, view, clock.playing, now);
   // Simulated classmates follow your own eye height (slowly, so they do not
   // bob when you move your head).
-  if (vr.active && camera.position.y > 0.5 && camera.position.y < 2.2) {
-    if (userEyeReset) { userEye = camera.position.y; userEyeReset = false; }
-    userEye += (camera.position.y - userEye) * Math.min(1, frameDt / 4);
+  if (vr.active && calibrateIn > 0 && --calibrateIn === 0 && SEATS.autoEyeHeight) {
+    const y = camera.position.y;
+    if (y > -1 && y < 2.5 && y !== 0) {
+      seatLift = SEATS.eyeHeight - y;
+      applySeat();
+      userEyeReset = true;
+    }
+  }
+  const eye = camera.position.y + (vr.active ? seatLift : 0);
+  if (vr.active && eye > 0.5 && eye < 2.2) {
+    if (userEyeReset) { userEye = eye; userEyeReset = false; }
+    userEye += (eye - userEye) * Math.min(1, frameDt / 4);
   }
   passengers.update(settings.simulated ? simulation.update(t, userEye) : NO_PASSENGERS, settings.seat);
 

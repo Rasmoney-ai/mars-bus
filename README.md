@@ -11,7 +11,7 @@ Trin 1 (soloturen) er bygget: én passager, lokalt ur og simulerede medpassagere
 1. Åbn linket i Meta Quest-browseren.
 2. Vælg plads (1-10). Plads 1 og 2 sidder forrest.
 3. Tryk **Gå ind i VR**. Turen starter efter en velkomst og en nedtælling.
-4. Sid ned, og kig lige frem. Hold Meta-knappen inde for at rette billedet ind.
+4. Sid ned, og kig lige frem. Hold Meta-knappen inde for at rette billedet ind. Øjenhøjden sættes selv til en naturlig siddehøjde, når du går ind i VR, og når du retter ind.
 
 Den lille skærm foran din plads har knapperne **Pause / Fortsæt**, **Forfra / Kør igen** og **Komfort til/fra**. Du kan:
 
@@ -71,6 +71,7 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `src/marsBus.js` | busmodellen "R-10", lavet med Claude Design (sæder, vinduer, instrumentbræt, hjul) |
 | `src/bus.js` | sætter modellen ind i turen: sædepladser, levende kort, infoskærm og hjul |
 | `src/terrain.js`, `src/landmarks.js` | Mars-landskab, vej, sten, himmel og landemærker |
+| `src/shadows.js` | bløde skygger under sten og fra klippetårnene, bagt ind |
 | `src/lander.js` | landingsmodulet LM-03, lavet med Claude Design |
 | `src/marsBaseSite.js` | Marsbasen som byggeplads, lavet med Claude Design. Strålebeskyttelse, energi, vand og mad er ikke løst, så eleverne selv kan finde løsninger |
 | `src/curiosity.js` | roveren Curiosity, lavet med Claude Design |
