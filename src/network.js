@@ -18,6 +18,8 @@ const VERSION = 1;
 // then for each hand a flag (0 none, 1 rest, 2 point), position, quaternion.
 export const POSE_LENGTH = 23;
 const HAND = [7, 15];
+// Received poses are never placed closer together in time than this (ms).
+const MIN_SPACING = 500 / NETWORK.sendHz;
 
 // A room name from the address, or null if it is missing or not usable.
 export function roomName(text) {
@@ -97,6 +99,7 @@ export class Network {
     this._heard = 0;              // performance.now() of the latest message
     this._error = null;
     this._seatTries = 0;
+    this._seatAsked = 0;          // seat requests still waiting for their answer
     // Clock sync: relay clock minus performance.now(), in ms.
     this._samples = [];
     this._offset = null;
@@ -167,7 +170,7 @@ export class Network {
   claimSeat(seat) {
     if (this.role !== 'rider' || !validSeat(seat)) return;
     this.preferredSeat = seat;
-    this._send({ t: 'seat', seat });
+    this._askSeat(seat);
   }
 
   // Change the shared ride clock: 'play' | 'pause' | 'seek' | 'restart'.
@@ -263,8 +266,9 @@ export class Network {
         this._changed();
         break;
       case 'seat':
+        this._seatAsked = Math.max(0, this._seatAsked - 1);
         this._gotSeat(m.seat);
-        if (!m.ok && this.seat === null) this._claimFreeSeat();
+        if (this.seat === null) this._claimFreeSeat();
         this._changed();
         break;
       case 'ride':
@@ -285,10 +289,13 @@ export class Network {
   _onWelcome(m) {
     this._retry = 0;
     this._seatTries = 0;
+    this._seatAsked = 0;
     this.status = 'online';
-    // A first rough clock estimate; the pings below make it precise.
+    // A first rough clock estimate; the pings below make it precise. After
+    // a reconnect the old estimate is kept and only nudged, so the ride
+    // does not jump.
     this._samples.length = 0;
-    this._rough = true;
+    this._rough = this._offset === null;
     if (this._offset === null && typeof m.now === 'number') {
       this._offset = this._target = m.now - performance.now();
       this._slewAt = performance.now();
@@ -309,13 +316,19 @@ export class Network {
     }
   }
 
+  _askSeat(seat) {
+    if (this._send({ t: 'seat', seat })) this._seatAsked++;
+  }
+
   // Take the first free seat (when ours was taken, or none was asked for).
+  // One request at a time: when several headsets join at once, each one that
+  // is refused simply asks for the next free seat.
   _claimFreeSeat() {
-    if (this.status !== 'online' || this._seatTries >= 2 * SEATS.count) return;
+    if (this.status !== 'online' || this._seatAsked > 0 || this._seatTries >= 4 * SEATS.count) return;
     for (let n = 1; n <= SEATS.count; n++) {
       if (!this.peers.includes(n)) {
         this._seatTries++;
-        this._send({ t: 'seat', seat: n });
+        this._askSeat(n);
         return;
       }
     }
@@ -362,8 +375,21 @@ export class Network {
       r = { samples: [], out: newPassenger(seat) };
       this._remote.set(seat, r);
     }
-    r.samples.push({ time: performance.now(), d });
-    if (r.samples.length > 6) r.samples.shift();
+    const s = r.samples;
+    const now = performance.now();
+    let time = now;
+    if (s.length) {
+      // Poses that arrive in a burst (after a short stall on the network) are
+      // spread out, so the movement catches up smoothly instead of jumping.
+      time = Math.max(now, s[s.length - 1].time + MIN_SPACING);
+      if (time - now > 400) {
+        // Too far behind: start again from this pose.
+        s.length = 0;
+        time = now;
+      }
+    }
+    s.push({ time, d });
+    if (s.length > 8) s.shift();
   }
 
   _startPings(burst) {
@@ -390,6 +416,7 @@ export class Network {
 
   _onClose(code) {
     this._ws = null;
+    this._seatAsked = 0;
     clearTimeout(this._pingTimer);
     if (this._closed) return;
     const error = this._error;
