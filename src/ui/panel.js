@@ -30,7 +30,10 @@ export class SeatPanel {
     this.state = state;
     const msg = now < this.messageUntil ? this.message : '';
     const buttons = [];
-    if (state.ended) buttons.push({ id: 'restart', label: 'Kør igen', primary: true });
+    // In the shared ride the teacher's page steers; then only the comfort
+    // button is shown here (state.canControl is false).
+    if (state.canControl === false) { /* no ride buttons */ }
+    else if (state.ended) buttons.push({ id: 'restart', label: 'Kør igen', primary: true });
     else if (state.playing) buttons.push({ id: 'pause', label: 'Pause' });
     else {
       buttons.push({ id: 'play', label: state.started ? 'Fortsæt' : 'Start', primary: true });

@@ -4,7 +4,7 @@ VR-tur til Meta Quest 3: Eleverne kører i en selvkørende bus fra landingsplads
 
 **Prøv den:** https://rasmoney-ai.github.io/mars-bus/
 
-Trin 1 (soloturen) er bygget: én passager, lokalt ur og simulerede medpassagerer.
+Trin 1 (soloturen) er bygget: én passager, lokalt ur og simulerede medpassagerer. En prøveudgave af den fælles tur (trin 2 og 3) ligger klar, men er ikke slået til endnu.
 
 ## Sådan bruges den
 
@@ -39,8 +39,34 @@ Tryk **Se på skærmen**. Træk med musen for at kigge rundt.
 | H | skjul hjælp |
 | Esc | tilbage til menuen |
 
+## Fælles tur (prøveudgave)
+
+Flere briller kan køre i samme bus. Hver elev ser de andre som hjelm og handsker på deres pladser, og turen starter, holder pause og fortsætter samtidig for alle.
+
+Brillerne behøver ikke vide, hvor de er i lokalet. Hver brille kender kun sit sædenummer. Den sender hovedets og hændernes stilling målt ud fra sit eget sæde, og de andre briller tegner hjelm og handsker på det sæde i bussen. Der sendes kun sædenummer og positioner: ingen navne, lyd eller billeder.
+
+Sådan gør man:
+
+1. Læreren åbner `control.html?room=<navn>` på sin computer, fx `https://rasmoney-ai.github.io/mars-bus/control.html?room=svsh-4b`. Siden viser, hvilke pladser der er optaget, og har knapperne **Start turen**, **Pause**, **Tilbage til start** og **Forrige/Næste stop**.
+2. Eleverne åbner `https://rasmoney-ai.github.io/mars-bus/?room=<navn>` i brillen og vælger den plads, der svarer til deres stol. Optagne pladser er grå.
+3. Alle går ind i VR, sidder ned, kigger lige frem og holder Meta-knappen inde for at rette billedet ind.
+4. Læreren trykker **Start turen**.
+
+Uden lærerens side kan en passager starte turen på skærmen foran sin plads. Vælg et navn til turen, som ikke er let at gætte: Alle, der kender navnet, kan stige på.
+
+Stil stolene som sæderne i bussen (to og to med midtergang) og med en armslængde imellem. Man ser de andres handsker, men de virkelige hænder er ikke nødvendigvis præcis dér.
+
+Den fælles tur bruger et lille relæ på nettet, som sender beskederne videre mellem brillerne. Det ligger i mappen `relay/` og skal sættes op én gang (se `relay/README.md`). Indtil relæets adresse står i `src/config.js` (`NETWORK.relayUrl`), fortæller siden, at fælles tur ikke er sat op, og soloturen virker som før.
+
+Den fælles tur er afprøvet med simulerede briller (se `tests/shared-ride/README.md`), men endnu ikke med flere rigtige briller. Billederne er fra testen: Plads 4 ser plads 3 pege ud ad vinduet, og en fuld bus set fra plads 2.
+
+![Plads 4 ser passageren på plads 3 pege ud ad vinduet](docs/shared-ride/plads4-ser-plads3-pege.jpg)
+
+![En fuld bus med ti passagerer, set fra plads 2](docs/shared-ride/fuld-bus.jpg)
+
 ## Indstillinger i adressen
 
+- `?room=svsh-4b`: fælles tur med det navn (se ovenfor)
 - `?seat=3`: vælg plads 3
 - `&comfort=1`: komforttilstand til
 - `&sim=0`: ingen simulerede passagerer
@@ -87,7 +113,10 @@ Eksempel: `https://rasmoney-ai.github.io/mars-bus/?seat=5&comfort=1`
 | `audio/speak/` | lydfilerne med speak (mp3) |
 | `src/ui/` | skærme i bussen, knapperne foran sædet, startside og skærmvisning |
 | `src/xr.js`, `src/desktop.js` | VR-session og mus/taster |
-| `src/network.js` | tom indtil trin 2 |
+| `src/network.js` | fælles tur: forbindelsen til relæet, det fælles ur og de andre passagerers bevægelser |
+| `control.html`, `src/control.js` | lærerens side til den fælles tur |
+| `relay/` | relæet til den fælles tur (kører på Cloudflare, ikke på GitHub Pages) |
+| `tests/shared-ride/` | test af den fælles tur med simulerede briller |
 
 ## Teknik
 

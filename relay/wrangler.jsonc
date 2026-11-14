@@ -1,0 +1,20 @@
+// Cloudflare Workers configuration for the relay (see README.md).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mars-bus-relay",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-01",
+
+  // One Durable Object per room. The free plan only has the SQLite-backed
+  // kind, which is what "new_sqlite_classes" creates.
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+
+  "vars": {
+    // Web pages that may open a room (see "Endpoint" in PROTOCOL.md).
+    // Comma separated; ":*" at the end of an entry allows any port.
+    "ALLOWED_ORIGINS": "https://rasmoney-ai.github.io,http://localhost:*,http://127.0.0.1:*"
+  }
+}

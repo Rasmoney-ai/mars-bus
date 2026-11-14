@@ -163,6 +163,29 @@ h2 {
 .seat.right { grid-column: 3; }
 .seat.left { grid-column: 1; }
 
+.toggle[hidden] { display: none; }
+
+/* Shared ride: a seat taken by someone else. */
+.seat.taken {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+.seat.taken:hover { transform: none; }
+
+.room-status {
+  text-align: center;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+.room-status a { color: var(--accent-2); }
+.room-status[data-state="online"] { border-color: #4caf7a; }
+.room-status[data-state="problem"] { border-color: var(--accent-2); }
+
 .seat-label {
   text-align: center;
   margin: 12px 0 0;
@@ -371,3 +394,47 @@ h2 {
   border-radius: 12px;
   white-space: pre-wrap;
 }
+
+/* --- Teacher's page (control.html) --------------------------------------------- */
+
+html:has(body.control-page), body.control-page {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+}
+
+body.control-page { padding: 16px; }
+
+.control .seat { cursor: default; }
+.control .seat:hover { transform: none; }
+.control .seat.empty { opacity: 0.3; }
+
+.c-join label { display: block; margin: 12px 0 8px; }
+.c-row { display: flex; gap: 10px; }
+.c-row input {
+  flex: 1;
+  font: inherit;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+.c-row button {
+  padding: 12px 22px;
+  border-radius: 12px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.c-title { font-size: 1.4rem; font-weight: 700; margin: 0; }
+.c-time {
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
+  margin: 12px 0 0;
+}
+.control .actions.small button { font-size: 1rem; padding: 10px 12px; }
+.control code { color: var(--accent-2); word-break: break-all; }
+.control .room-status { text-align: left; margin: 0 0 18px; }

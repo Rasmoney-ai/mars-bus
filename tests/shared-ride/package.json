@@ -1,0 +1,13 @@
+{
+  "name": "mars-bus-shared-ride-tests",
+  "private": true,
+  "type": "module",
+  "description": "Tests for the shared ride with simulated headsets (see README.md). Not used by the site.",
+  "scripts": {
+    "test:net": "node net-clients.mjs",
+    "test:vr": "node sim-vr.mjs"
+  },
+  "devDependencies": {
+    "iwer": "2.8.0"
+  }
+}

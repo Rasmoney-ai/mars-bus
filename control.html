@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mars-bussen · Lærerens side</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="control-page">
+  <main class="card control">
+    <header class="title">
+      <div>
+        <h1>Mars-bussen</h1>
+        <p class="lead">Lærerens side: start og styr den fælles tur</p>
+      </div>
+    </header>
+
+    <!-- Shown when the address has no ?room=<name>. -->
+    <form id="c-join" class="c-join" hidden>
+      <label for="c-room-input">Navn på turen (små bogstaver og tal, fx <code>svsh</code>)</label>
+      <div class="c-row">
+        <input id="c-room-input" type="text" inputmode="latin" autocomplete="off" maxlength="32" pattern="[A-Za-z0-9-]{1,32}" required>
+        <button class="primary" type="submit">Åbn</button>
+      </div>
+    </form>
+
+    <section id="c-main" hidden>
+      <p id="c-status" class="room-status"></p>
+
+      <div class="columns">
+        <div class="seat-picker">
+          <h2>Hvem er om bord</h2>
+          <div class="bus-plan">
+            <div class="bus-front">Forrest</div>
+            <div id="c-seats" class="seats"></div>
+          </div>
+          <p id="c-count" class="seat-label"></p>
+        </div>
+
+        <div class="side">
+          <p id="c-title" class="c-title"></p>
+          <p id="c-subtitle" class="note"></p>
+          <p id="c-time" class="c-time">0:00 / 0:00</p>
+          <div class="scrub">
+            <input id="c-scrub" type="range" min="0" max="1" step="0.5" value="0" aria-label="Tidslinje">
+            <div id="c-ticks" class="ticks"></div>
+          </div>
+          <div class="actions">
+            <button id="c-play" class="primary" disabled>Start turen</button>
+            <button id="c-reset" disabled>Tilbage til start</button>
+          </div>
+          <div class="actions small">
+            <button id="c-prev" disabled>⏮ Forrige stop</button>
+            <button id="c-next" disabled>Næste stop ⏭</button>
+          </div>
+          <p class="note">Eleverne åbner denne adresse i brillen og vælger plads:</p>
+          <p class="note"><code id="c-link"></code></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="error" class="error" hidden></div>
+  <script>
+    window.addEventListener('error', function (e) {
+      var box = document.getElementById('error');
+      box.textContent = 'Fejl: ' + (e.message || e);
+      box.hidden = false;
+    });
+  </script>
+  <script type="module" src="src/control.js"></script>
+</body>
+</html>

@@ -5,7 +5,7 @@
 // small steps; everything is computed from t.
 
 import * as THREE from 'three';
-import { RENDER, SEATS, NARRATION } from './config.js';
+import { RENDER, SEATS, NARRATION, NETWORK } from './config.js';
 import { Path, ROUTE } from './route.js';
 import { Timeline, smooth } from './timeline.js';
 import { createWorld } from './terrain.js';
@@ -22,9 +22,10 @@ import { SeatPanel, PanelInteraction } from './ui/panel.js';
 import { DomUI } from './ui/dom.js';
 import { DesktopControls } from './desktop.js';
 import { VRSession } from './xr.js';
-import { createNetwork } from './network.js';
+import { createNetwork, roomName, POSE_LENGTH } from './network.js';
 
 // --- Settings (start page or URL: ?seat=3&comfort=1&sim=0&speak=0&voice=ai&debug)
+// ?room=<name> joins the shared ride with that name (see network.js).
 
 const params = new URLSearchParams(location.search);
 const settings = {
@@ -91,14 +92,21 @@ const passengers = new PassengerView();
 bus.group.add(passengers.group);
 const simulation = new PassengerSimulation(timeline, world.layout);
 const hands = new UserHands(renderer, rig);
-const clock = new LocalClock(timeline.duration);
+// The shared ride (?room=<name>): one clock for the whole bus and the other
+// passengers' real poses from the relay. Without a room: the solo ride.
+const network = createNetwork({
+  params,
+  seat: params.has('seat') ? settings.seat : null, // no seat in the address: the first free one
+  duration: timeline.duration,
+});
+const shared = network !== null;
+const clock = shared ? network.clock : new LocalClock(timeline.duration);
 const sound = new Sound();
 const rover = new RoverMotion(world.rover, world.layout.rover, world.layout.stop.cliff,
   timeline.stops.find((st) => st.id === 'cliff').arrival, world.terrain);
 const narration = new Narration(timeline, sound);
 narration.setEnabled(settings.speak);
 narration.setVoice(settings.voice);
-const network = createNetwork(); // null until step 2
 
 // Fade to black (comfort mode): a small black sphere around the eyes.
 const fade = new THREE.Mesh(
@@ -120,12 +128,18 @@ let calibrateIn = 0;
 let comfortSwitch = null;
 const SWITCH_HALF = 0.35; // seconds to fade out (and in again)
 
+// Move to another seat (in the shared ride: once the relay has given it to us).
+function setSeat(n) {
+  settings.seat = clampSeat(n);
+  applySeat();
+  dom.refreshSettings();
+  saveSettingsToUrl();
+}
+
 const actions = {
   selectSeat(n) {
-    settings.seat = clampSeat(n);
-    applySeat();
-    dom.refreshSettings();
-    saveSettingsToUrl();
+    if (shared) network.claimSeat(clampSeat(n));
+    else setSeat(n);
   },
   setComfort(on) {
     settings.comfort = on;
@@ -162,6 +176,11 @@ const actions = {
     sound.unlock();
     dom.showHud();
     desktop.enabled = true;
+    if (shared) {
+      // The shared ride starts for everyone at once (teacher's page or seat panel).
+      network.setActive(true);
+      return;
+    }
     if (clock.getTime() >= timeline.duration) clock.seek(0);
     clock.play();
   },
@@ -187,7 +206,8 @@ const actions = {
   toggleMute() { sound.setMuted(!sound.muted); },
   toggleHelp() { dom.toggleHelp(); },
   showMenu() {
-    clock.pause();
+    if (shared) network.setActive(false);
+    else clock.pause();
     desktop.enabled = false;
     dom.showStart();
   },
@@ -234,17 +254,25 @@ const vr = new VRSession(renderer, {
     desktop.enabled = false;
     applySeat();
     autoPaused = false;
+    if (shared) {
+      // Everyone waits in the bus until the ride is started for all.
+      network.setActive(true);
+      return;
+    }
     if (clock.getTime() >= timeline.duration) clock.seek(0);
     clock.play();
   },
   onEnd() {
-    clock.pause();
+    if (shared) network.setActive(false);
+    else clock.pause();
     applySeat();
     dom.showStart();
     onResize();
   },
   onVisibility(state) {
     // Solo ride: pause while the Quest menu is open, continue afterwards.
+    // The shared ride goes on for everyone else, so it is never paused here.
+    if (shared) return;
     if (state !== 'visible' && clock.playing) {
       clock.pause();
       autoPaused = true;
@@ -260,6 +288,52 @@ const vr = new VRSession(renderer, {
 });
 
 applySeat();
+
+// --- Shared ride: start page status, our seat, and our own pose -----------------
+
+let offlineSince = 0;
+function refreshShared() {
+  dom.setShared({
+    room: network.room, status: network.status, seat: network.seat,
+    peers: network.peers, control: network.control,
+  });
+  if (network.status === 'online') offlineSince = 0;
+  else if (!offlineSince) offlineSince = performance.now();
+}
+if (shared) {
+  network.onSeat = (seat) => { if (seat !== settings.seat) setSeat(seat); };
+  network.onChange = refreshShared;
+  network.onDenied = () => panel.flash('Læreren styrer turen', performance.now());
+  refreshShared();
+} else if (params.get('room')) {
+  // A room was asked for, but there is no relay (or the name is not usable).
+  dom.setShared({ room: roomName(params.get('room')), status: 'unavailable', seat: null, peers: [], control: false });
+}
+
+// Our own head and hands in seat space (the floor of the bus under our
+// head), sent a few times a second while riding. See relay/PROTOCOL.md.
+const ownPose = new Array(POSE_LENGTH).fill(0);
+let poseSentAt = 0;
+function sendOwnPose(now) {
+  const riding = vr.active || desktop.enabled;
+  if (!riding || network.seat !== settings.seat || now - poseSentAt < 1000 / NETWORK.sendHz) return;
+  poseSentAt = now;
+  const lift = vr.active ? seatLift : 0;
+  const d = ownPose;
+  camera.position.toArray(d, 0);
+  d[1] += lift;
+  camera.quaternion.toArray(d, 3);
+  ['left', 'right'].forEach((side, i) => {
+    const o = 7 + 8 * i;
+    const wrist = vr.active ? hands.wrist(side) : null;
+    d[o] = wrist ? (hands.pointing(side) ? 2 : 1) : 0;
+    if (!wrist) return;
+    wrist.position.toArray(d, o + 1);
+    d[o + 2] += lift;
+    wrist.quaternion.toArray(d, o + 4);
+  });
+  network.sendPose(d);
+}
 
 // The guide's ceiling speaker, above and a little ahead of your seat; the
 // listener is your head, both in bus coordinates, so the voice stays up in
@@ -334,18 +408,30 @@ function frame() {
     if (userEyeReset) { userEye = eye; userEyeReset = false; }
     userEye += (eye - userEye) * Math.min(1, frameDt / 4);
   }
-  passengers.update(settings.simulated ? simulation.update(t, userEye) : NO_PASSENGERS, settings.seat);
+  // The others in the bus: real passengers in the shared ride, otherwise the
+  // simulated ones.
+  const others = shared ? network.passengers(now)
+    : settings.simulated ? simulation.update(t, userEye) : NO_PASSENGERS;
+  passengers.update(others, settings.seat);
 
   if (vr.active) {
     hands.update();
     interaction.update();
   }
-  const line = status.big ? `${status.title} ${status.big}` : status.title;
+  if (shared) sendOwnPose(now);
+  let line = status.big ? `${status.title} ${status.big}` : status.title;
+  if (shared) {
+    if (offlineSince && now - offlineSince > 3000) line = 'Forbindelsen er afbrudt. Prøver igen …';
+    else if (t <= 0 && !clock.playing) line = network.canControl ? 'Er alle klar? Tryk Start' : 'Venter på afgang';
+    if (settings.debug) line += ` · ${network.riders} om bord · ${network.rtt === null ? '?' : Math.round(network.rtt)} ms`;
+  }
   panel.update({
     playing: clock.playing,
     started: t > 0,
     ended: t >= timeline.duration,
     comfort: settings.comfort,
+    // Shared ride: only the teacher's page (or, without one, anyone) steers.
+    canControl: !shared || network.canControl,
     line: settings.debug ? `${line} · ${fps} fps` : line,
   }, now);
 
@@ -391,7 +477,7 @@ for (const r of interaction.rays) r.visible = false;
 renderer.setAnimationLoop(frame);
 
 vr.checkSupport().then(({ supported, message }) => dom.setVRStatus(supported, message));
-document.getElementById('btn-desktop').disabled = false;
+dom.setReady();
 
 // For testing in the browser console.
-window.marsbus = { clock, timeline, settings, narration, actions, renderer, scene, network, desktop, world, panel, interaction };
+window.marsbus = { clock, timeline, settings, narration, actions, renderer, scene, network, desktop, world, panel, interaction, vr, hands, camera, rig, bus, passengers };
