@@ -1,0 +1,18 @@
+{
+  "name": "mars-bus-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WebSocket relay for the shared Mars bus ride (see PROTOCOL.md)",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "deploy": "wrangler deploy",
+    "test": "node --test test/unit.mjs",
+    "test:protocol": "node --test test/protocol.mjs",
+    "test:restart": "node test/restart.mjs",
+    "test:load": "node test/load.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.162.0"
+  }
+}
