@@ -58,7 +58,11 @@ Stil stolene som sæderne i bussen (to og to med midtergang) og med en armslæng
 
 Den fælles tur bruger et lille relæ på nettet, som sender beskederne videre mellem brillerne. Det ligger i mappen `relay/` og skal sættes op én gang (se `relay/README.md`). Indtil relæets adresse står i `src/config.js` (`NETWORK.relayUrl`), fortæller siden, at fælles tur ikke er sat op, og soloturen virker som før.
 
-Den fælles tur er afprøvet med simulerede briller (se `tests/shared-ride/README.md`), men endnu ikke med flere rigtige briller.
+Den fælles tur er afprøvet med simulerede briller (se `tests/shared-ride/README.md`), men endnu ikke med flere rigtige briller. Billederne er fra testen: Plads 4 ser plads 3 pege ud ad vinduet, og en fuld bus set fra plads 2.
+
+![Plads 4 ser passageren på plads 3 pege ud ad vinduet](docs/shared-ride/plads4-ser-plads3-pege.jpg)
+
+![En fuld bus med ti passagerer, set fra plads 2](docs/shared-ride/fuld-bus.jpg)
 
 ## Indstillinger i adressen
 
