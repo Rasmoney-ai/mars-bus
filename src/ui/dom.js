@@ -18,6 +18,9 @@ export class DomUI {
     this.hud = $('hud');
     this._last = 0;
     this._key = '';
+    this.shared = null;       // shared ride info (see setShared), null = solo
+    this.vrSupported = false;
+    this.ready = false;       // the landscape is built: the ride can be shown
 
     drawBadge($('badge').getContext('2d'), 256);
 
@@ -60,15 +63,77 @@ export class DomUI {
 
   refreshSettings() {
     const s = this.settings;
-    this.seatButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(i + 1 === s.seat)));
-    $('seat-label').textContent = `Plads ${s.seat} · ${SEATS.colorNames[s.seat - 1]} hjelm`;
+    const sh = this.shared;
+    const joined = sh && sh.status !== 'unavailable';
+    this.seatButtons.forEach((b, i) => {
+      const n = i + 1;
+      // Shared ride: seats that others sit in cannot be chosen.
+      const taken = Boolean(joined && n !== sh.seat && sh.peers.includes(n));
+      b.setAttribute('aria-pressed', String(joined ? n === sh.seat : n === s.seat));
+      b.classList.toggle('taken', taken);
+      b.disabled = taken;
+      b.setAttribute('aria-label', taken ? `Plads ${n} (optaget)` : `Plads ${n}`);
+    });
+    const seat = joined ? sh.seat : s.seat;
+    $('seat-label').textContent = seat ? `Plads ${seat} · ${SEATS.colorNames[seat - 1]} hjelm` : 'Ingen plads endnu';
     $('opt-comfort').checked = s.comfort;
     $('opt-sim').checked = s.simulated;
+    // The simulated passengers are only for the solo ride.
+    $('opt-sim').closest('label').hidden = Boolean(joined);
+    this._refreshVR();
+  }
+
+  // Shared ride (?room=<name>): shows the room, how many are on board and
+  // which seats are taken. info: { room, status, seat, peers, control } with
+  // status connecting | online | offline | replaced | full | outdated |
+  // unavailable (no relay set up: the ride is solo).
+  setShared(info) {
+    this.shared = info;
+    const box = $('room-status');
+    box.hidden = false;
+    const n = info.peers.length;
+    const texts = {
+      connecting: 'forbinder …',
+      online: `${n} om bord · ${info.control ? 'læreren starter turen' : 'turen startes fra en af pladserne'}`,
+      offline: 'ingen forbindelse, prøver igen …',
+      replaced: 'siden er åbnet i en anden fane. Luk den ene.',
+      full: 'bussen er fuld (10 pladser).',
+      outdated: 'siden er for gammel. Genindlæs siden.',
+      unavailable: 'er ikke sat op endnu. Du kører alene.',
+    };
+    box.textContent = `Fælles tur${info.room ? ` "${info.room}"` : ''}: ${texts[info.status] || info.status}`;
+    const problem = info.status !== 'online' && info.status !== 'connecting';
+    box.dataset.state = info.status === 'online' ? 'online' : problem ? 'problem' : '';
+    if (problem && info.status !== 'unavailable') {
+      // A way out if the connection cannot be made: the same ride, alone.
+      const p = new URLSearchParams(location.search);
+      p.delete('room');
+      const link = document.createElement('a');
+      link.href = `${location.pathname}?${p.toString()}`;
+      link.textContent = 'Kør alene i stedet';
+      box.append(' ', link);
+    }
+    this.refreshSettings();
   }
 
   setVRStatus(supported, message) {
-    $('btn-vr').disabled = !supported;
+    this.vrSupported = supported;
     $('vr-status').textContent = message || '';
+    this._refreshVR();
+  }
+
+  // The landscape is built: "Se på skærmen" can be used.
+  setReady() {
+    this.ready = true;
+    this._refreshVR();
+  }
+
+  // VR needs a headset and, in the shared ride, a seat in the bus.
+  _refreshVR() {
+    const sh = this.shared;
+    const needsSeat = Boolean(sh && sh.status !== 'unavailable' && !sh.seat);
+    $('btn-vr').disabled = !this.vrSupported || needsSeat;
+    $('btn-desktop').disabled = !this.ready || needsSeat;
   }
 
   showStart() {

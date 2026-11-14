@@ -23,7 +23,8 @@ export class UserHands {
       hand.addEventListener('connected', (e) => { this.handedness[i] = e.data.hand ? e.data.handedness : null; });
       hand.addEventListener('disconnected', () => { this.handedness[i] = null; });
     });
-
+    this._wrist = { left: null, right: null };
+    this._pointing = { left: false, right: false };
   }
 
   // Kept for compatibility: the gloves are white with gold details.
@@ -51,7 +52,39 @@ export class UserHands {
         bone.quaternion.copy(j.quaternion);
       }
       seen[side] = true;
+      this._wrist[side] = J.wrist;
+      this._pointing[side] = isPointing(J, this._pointing[side]);
     });
-    for (const side of ['left', 'right']) this.gloves[side].group.visible = seen[side];
+    for (const side of ['left', 'right']) {
+      this.gloves[side].group.visible = seen[side];
+      if (!seen[side]) {
+        this._wrist[side] = null;
+        this._pointing[side] = false;
+      }
+    }
   }
+
+  // For the shared ride: the tracked wrist of the 'left' or 'right' hand
+  // (an object with position and quaternion in rig space), or null.
+  wrist(side) {
+    return this._wrist[side];
+  }
+
+  // True while that hand points: the index finger stretched, the others curled.
+  pointing(side) {
+    return this._pointing[side];
+  }
+}
+
+// Pointing = the index fingertip reaches clearly further from the wrist than
+// the middle and ring fingertips. Measured relative to the hand's own size,
+// so it works for small hands too; the two thresholds stop it flickering.
+function isPointing(J, was) {
+  const wrist = J.wrist, index = J['index-finger-tip'], middle = J['middle-finger-tip'], ring = J['ring-finger-tip'];
+  if (!index || !middle || !ring || !index.visible || !middle.visible || !ring.visible) return false;
+  const di = index.position.distanceTo(wrist.position);
+  if (di < 0.02) return false;
+  const others = Math.max(middle.position.distanceTo(wrist.position), ring.position.distanceTo(wrist.position));
+  const lead = (di - others) / di;
+  return lead > (was ? 0.12 : 0.22);
 }

@@ -90,6 +90,21 @@ export const NARRATION = {
   resyncSeconds: 0.3,
 };
 
+// --- Shared ride (several headsets in the same bus) ------------------------
+// Used only when the address has ?room=<name>. Everyone with the same room
+// name rides the same bus on one shared clock and sees each other's helmet
+// and gloves. See relay/PROTOCOL.md.
+export const NETWORK = {
+  // Address of the relay (wss://...). Empty = the shared ride is not set up.
+  relayUrl: '',
+  sendHz: 15,               // own head and hands sent this often
+  delayMs: 130,             // others are drawn this far behind, so their movement is smooth
+  staleMs: 4000,            // a passenger who has sent nothing for this long is not drawn
+  pingSeconds: 2,           // clock sync while riding
+  idlePingSeconds: 10,      // ... and on the start page
+  maxSlew: 0.05,            // the shared clock is nudged at most 5 % fast or slow, never jumped
+};
+
 // --- World -----------------------------------------------------------------
 export const WORLD = {
   seed: 1976,               // fixed seed: the landscape is the same every time
