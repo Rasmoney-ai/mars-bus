@@ -102,6 +102,7 @@ export const NETWORK = {
   staleMs: 4000,            // a passenger who has sent nothing for this long is not drawn
   pingSeconds: 2,           // clock sync while riding
   idlePingSeconds: 10,      // ... and on the start page
+  connectSeconds: 8,        // a connection attempt that takes longer is given up and tried again
   maxSlew: 0.05,            // the shared clock is nudged at most 5 % fast or slow, never jumped
 };
 

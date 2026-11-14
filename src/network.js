@@ -97,6 +97,8 @@ export class Network {
     this._closed = false;
     this._retry = 0;
     this._reconnectTimer = null;
+    this._connectTimer = null;
+    this._welcomed = false;       // the current socket has got its "welcome"
     this._pingTimer = null;
     this._burst = 0;
     this._heard = 0;              // performance.now() of the latest message
@@ -129,6 +131,12 @@ export class Network {
   connect() {
     if (this._closed) return;
     clearTimeout(this._reconnectTimer);
+    // Never two sockets at once: a forgotten one would take up room in the relay.
+    if (this._ws) {
+      const old = this._ws;
+      this._ws = null;
+      try { old.close(); } catch { /* already closed */ }
+    }
     let ws;
     try {
       ws = new WebSocket(this.url);
@@ -137,7 +145,17 @@ export class Network {
       return;
     }
     this._ws = ws;
+    this._welcomed = false;
     this._heard = performance.now();
+    // A connection attempt that does not get through (no "welcome" within a
+    // few seconds) is given up, so that a hanging one cannot block the next.
+    clearTimeout(this._connectTimer);
+    this._connectTimer = setTimeout(() => {
+      if (ws !== this._ws || this._welcomed) return;
+      this._ws = null;
+      try { ws.close(); } catch { /* already closed */ }
+      this._onClose(1006);
+    }, NETWORK.connectSeconds * 1000);
     ws.onopen = () => {
       if (ws !== this._ws) return;
       this._heard = performance.now();
@@ -155,6 +173,7 @@ export class Network {
   close() {
     this._closed = true;
     clearTimeout(this._reconnectTimer);
+    clearTimeout(this._connectTimer);
     clearTimeout(this._pingTimer);
     if (this._ws) {
       try { this._ws.close(); } catch { /* already closed */ }
@@ -290,6 +309,8 @@ export class Network {
   }
 
   _onWelcome(m) {
+    this._welcomed = true;
+    clearTimeout(this._connectTimer);
     this._retry = 0;
     this._seatTries = 0;
     this._seatAsked = 0;
@@ -429,6 +450,7 @@ export class Network {
     this._ws = null;
     this._seatAsked = 0;
     clearTimeout(this._pingTimer);
+    clearTimeout(this._connectTimer);
     if (this._closed) return;
     const error = this._error;
     this._error = null;
