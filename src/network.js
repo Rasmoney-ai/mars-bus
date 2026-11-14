@@ -20,6 +20,9 @@ export const POSE_LENGTH = 23;
 const HAND = [7, 15];
 // Received poses are never placed closer together in time than this (ms).
 const MIN_SPACING = 500 / NETWORK.sendHz;
+// Two clock samples may disagree by this much (ms) beyond what their round
+// trips explain, before the older one is thrown away.
+const CLOCK_SLACK = 8;
 
 // A room name from the address, or null if it is missing or not usable.
 export function roomName(text) {
@@ -349,7 +352,15 @@ export class Network {
     if (typeof m.c !== 'number' || typeof m.s !== 'number') return;
     const rtt = now - m.c;
     if (!(rtt >= 0 && rtt < 5000)) return;
-    this._samples.push({ rtt, offset: m.s + rtt / 2 - now });
+    const sample = { rtt, offset: m.s + rtt / 2 - now };
+    // The true offset is within half a round trip of each sample's value.
+    // A new sample that cannot be true together with an older one means
+    // the two clocks have jumped apart (a headset that slept: its own clock
+    // stood still meanwhile). The older samples then say nothing any more.
+    if (this._samples.some((s) => Math.abs(s.offset - sample.offset) > (s.rtt + rtt) / 2 + CLOCK_SLACK)) {
+      this._samples.length = 0;
+    }
+    this._samples.push(sample);
     if (this._samples.length > 12) this._samples.shift();
     let best = this._samples[0];
     for (const s of this._samples) if (s.rtt < best.rtt) best = s;

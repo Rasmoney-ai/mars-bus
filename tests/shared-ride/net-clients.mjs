@@ -265,5 +265,37 @@ await test('a late joiner lands in the running ride', async () => {
   return `the late joiner is ${diff.toFixed(1)} ms from the first rider`;
 });
 
+await test('a headset that slept (its own clock stood still) is right again within seconds', async () => {
+  const name = room();
+  const a = join(name);
+  await until(() => a.seat !== null, 'a seated');
+  a.setActive(true);
+  a.clock.play();
+  a.clock.seek(100);
+  await until(() => a.clock.playing && a.clock.getTime() >= 100, 'playing from 1:40');
+  await sleep(2500);
+  // The true ride time by the relay's own clock. (Compares this machine's
+  // clock with the relay's, so it is only exact with a relay on this machine.)
+  const truth = () => a.clock._ride.base + (Date.now() - a.clock._ride.at) / 1000;
+  const off = () => Math.abs(a.clock.getTime() - truth()) * 1000;
+  const before = off();
+  assert.ok(before < 60, `before the sleep the ride time is ${before.toFixed(0)} ms off`);
+
+  // Asleep for 30 s: the page's clock stops while the relay's goes on.
+  const real = performance.now.bind(performance);
+  performance.now = () => real() - 30_000;
+  let after;
+  try {
+    assert.ok(off() > 29_000, 'the stopped clock leaves the ride 30 s behind');
+    await sleep(NETWORK.pingSeconds * 1000 + 1000);
+    after = off();
+    assert.ok(after < 60, `a few seconds after waking the ride time is still ${after.toFixed(0)} ms off`);
+  } finally {
+    a.close();
+    delete performance.now;
+  }
+  return `ride time ${before.toFixed(0)} ms off before, 30 s behind on waking, ${after.toFixed(0)} ms off after the next answer from the relay`;
+});
+
 console.log(`\n${results.length - failed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
